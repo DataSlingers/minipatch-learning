@@ -1,20 +1,20 @@
-##############
+#############
 API Reference
-##############
+#############
 
-Here is the API documentation of the minipatch feature selection part of the package.
+This page contains detailed API references for the minipatch-learning package.
 
 
 Feature Selection
 =================
 
-.. automodule:: sklearn.minipatch_feature_selection
+.. automodule:: mplearn.feature_selection
    :no-members:
    :no-inherited-members:
 
 Here is the API documentation of the minipatch feature selection part of the package.
 
-.. currentmodule:: sklearn
+.. currentmodule:: mplearn
 
 Minipatch feature selection
 ---------------------------
@@ -22,7 +22,7 @@ Minipatch feature selection
    :toctree: generated/
    :template: class.rst
 
-   minipatch_feature_selection.AdaSTAMPS
+   feature_selection.AdaSTAMPS
 
 Base feature selector
 ---------------------
@@ -31,20 +31,20 @@ Base feature selector
    :toctree: generated/
    :template: class.rst
 
-   minipatch_feature_selection.base_selector.ThresholdedOLS
-   minipatch_feature_selection.base_selector.DecisionTreeSelector
+   feature_selection.base_selector.ThresholdedOLS
+   feature_selection.base_selector.DecisionTreeSelector
 
 
 Gaussian Graphical Model Selection
 ==================================
 
-.. automodule:: sklearn.minipatch_graphical_model
+.. automodule:: mplearn.graphical_model
    :no-members:
    :no-inherited-members:
 
 Here is the API documentation of the minipatch graphical model part of the package.
 
-.. currentmodule:: sklearn
+.. currentmodule:: mplearn
 
 Minipatch graph selection
 -------------------------
@@ -52,7 +52,7 @@ Minipatch graph selection
    :toctree: generated/
    :template: class.rst
 
-   minipatch_graphical_model.MPGraph
+   graphical_model.MPGraph
 
 Base graph selector
 -------------------
@@ -61,5 +61,5 @@ Base graph selector
    :toctree: generated/
    :template: class.rst
 
-   minipatch_graphical_model.base_graph.ThresholdedGraphicalLasso
+   graphical_model.base_graph.ThresholdedGraphicalLasso
 
