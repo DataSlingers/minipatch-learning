@@ -1,8 +1,9 @@
 import inspect
+from collections import defaultdict
+
+import numpy as np
 from sklearn.metrics import confusion_matrix
 import texttable
-import numpy as np
-from collections import defaultdict
 
 
 class BaseLearner:

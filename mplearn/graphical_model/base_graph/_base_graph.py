@@ -1,12 +1,14 @@
-from common import BaseLearner
+import sys
+
 import numpy as np
 import joblib
-import sys
 sys.modules['sklearn.externals.joblib'] = joblib
 import sklearn.utils._testing
 sys.modules['sklearn.utils.testing'] = sklearn.utils._testing
 from sklearn.utils.extmath import fast_logdet
 from inverse_covariance import QuicGraphicalLasso
+
+from ...common import BaseLearner
 
 
 def _hard_thresh_matrix(mat, tau_k):

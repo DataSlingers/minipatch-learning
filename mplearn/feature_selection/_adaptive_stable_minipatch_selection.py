@@ -1,12 +1,17 @@
-import numpy as np
-from common import BaseLearner
-from sklearn.utils.validation import check_is_fitted
-from sklearn.base import clone
 import numbers
 from warnings import warn
+
+import numpy as np
+from sklearn.utils.validation import check_is_fitted
+from sklearn.base import clone
 from sklearn.utils import safe_mask
-from minipatch_feature_selection.utils_feature_selection import manual_sort, \
-    kde_based_pi_thr, visualize_selection_frequency_versus_iteration
+
+from ..common import BaseLearner
+from .utils_feature_selection import (
+    manual_sort,
+    kde_based_pi_thr,
+    visualize_selection_frequency_versus_iteration
+)
 
 
 def _adaptive_feature_sampling_exploitation_exploration(sampling_options,
@@ -429,8 +434,8 @@ class AdaSTAMPS(BaseLearner):
     The following example shows how to retrieve the 4 truly informative
     features in the sparse regression dataset.
     >>> from sklearn.datasets import make_sparse_uncorrelated
-    >>> from minipatch_feature_selection.base_selector import ThresholdedOLS
-    >>> from minipatch_feature_selection import AdaSTAMPS
+    >>> from mplearn.feature_selection.base_selector import ThresholdedOLS
+    >>> from mplearn.feature_selection import AdaSTAMPS
     >>> X, y = make_sparse_uncorrelated(n_samples=100, n_features=10, random_state=0)
     >>> thresholded_ols = ThresholdedOLS(num_features_to_select=None, screening_thresh=None)
     >>> selector = AdaSTAMPS(base_selector=thresholded_ols,
@@ -836,8 +841,9 @@ class AdaSTAMPS(BaseLearner):
 
         Parameters
         ----------
-        X : array of shape (n_samples, n_features)
-            The input samples.
+        X : ndarray of shape (n_samples, n_features)
+            The input samples. Note that data frame or sparse matrix format
+            are not allowed. Also, the dtype of X has to be numeric (e.g. float, int).
 
         pi_thr : float, default=None
             The selection frequency threshold above which a feature is considered selected.
@@ -845,11 +851,10 @@ class AdaSTAMPS(BaseLearner):
 
         Returns
         -------
-        X_r : array of shape (n_samples, n_selected_features)
+        X_r : ndarray of shape (n_samples, n_selected_features)
             The input samples with only the selected features.
         """
         check_is_fitted(self)
-        # TODO: decide if need to validate X
 
         mask = self.get_support(pi_thr=pi_thr)
         if not mask.any():
@@ -865,24 +870,7 @@ class AdaSTAMPS(BaseLearner):
 
 
 
-'''
-import numpy as np
-from minipatch_feature_selection.base_selector import ThresholdedOLS
-from common import simple_clone
 
-estimator = ThresholdedOLS(num_features_to_select=2)
-a = simple_clone(estimator)
-
-b = simple_clone(a)
-b.fit(np.random.normal(0,1,50).reshape(10,5), np.random.normal(0,1,10), np.arange(2))
-
-c = simple_clone(a)
-c.fit(np.random.normal(0,1,50).reshape(10,5), np.random.normal(0,1,10), np.arange(2))
-
-
-
-
-'''
 
 
 

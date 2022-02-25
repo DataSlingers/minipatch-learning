@@ -1,15 +1,17 @@
-from common import BaseLearner
+from itertools import combinations
+
+import numpy as np
 from sklearn.utils import as_float_array, check_array
 from sklearn.utils.validation import check_is_fitted
 from sklearn.base import clone
 from sklearn.preprocessing import scale
 from scipy.sparse import triu, coo_matrix
-from itertools import combinations
 import joblib
 from joblib import Parallel, delayed
-import numpy as np
 from ray.util.joblib import register_ray
 import ray
+
+from ..common import BaseLearner
 
 
 def _extract_indices(Theta_tilde_k, Fk, data_type):
@@ -294,8 +296,8 @@ class MPGraph(BaseLearner):
     The following example shows how to infer the structure of the
     Gaussian graphical model (sparsity pattern of the precision matrix) from observed data.
     >>> import numpy as np
-    >>> from minipatch_graphical_model.base_graph import ThresholdedGraphicalLasso
-    >>> from minipatch_graphical_model import MPGraph
+    >>> from mplearn.graphical_model.base_graph import ThresholdedGraphicalLasso
+    >>> from mplearn.graphical_model import MPGraph
     >>> N, M = 1000, 500
     >>> precision = 1.25*np.identity(M) + np.diag(0.5 * np.ones(M - 1), 1) + np.diag(0.5 * np.ones(M - 1), -1)
     >>> X = np.random.RandomState(0).multivariate_normal(np.zeros(M), np.linalg.inv(precision), size=N)
@@ -536,85 +538,6 @@ class MPGraph(BaseLearner):
             return support_node_pair
         else:
             raise ValueError("support_type must be one of {'mask', 'indicator', 'sparse_matrix', 'node_pair'}")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -1,9 +1,11 @@
-from common import BaseLearner
+import numbers
+
 import numpy as np
 from scipy import stats
-import numbers
 from sklearn.linear_model import LinearRegression
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+
+from ...common import BaseLearner
 
 
 class ThresholdedOLS(BaseLearner):
