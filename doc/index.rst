@@ -1,48 +1,20 @@
+.. minipatch-learning documentation master file, created by
+   sphinx-quickstart on Fri Feb 25 17:27:26 2022.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
 
-
-Welcome to big-minipatch-package's documentation!
-============================================
-
-This is a package that contains a range of minipatch methods.
-
-.. toctree::
-   :maxdepth: 2
-   :hidden:
-   :caption: Getting Started
-
-   quick_start
+Welcome to minipatch-learning's documentation!
+==============================================
 
 .. toctree::
    :maxdepth: 2
-   :hidden:
-   :caption: Documentation
+   :caption: Contents:
 
-   user_guide
-   api
 
-.. toctree::
-   :maxdepth: 2
-   :hidden:
-   :caption: Tutorial - Examples
 
-   auto_examples/index
+Indices and tables
+==================
 
-`Getting started <quick_start.html>`_
--------------------------------------
-
-Information regarding how to get started using the package.
-
-`User Guide <user_guide.html>`_
--------------------------------
-
-Narrative documentation.
-
-`API Documentation <api.html>`_
--------------------------------
-
-API documentation.
-
-`Examples <auto_examples/index.html>`_
---------------------------------------
-
-A set of examples.
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
