@@ -13,7 +13,7 @@
 import os
 import sys
 
-import sphinx_gallery
+#import sphinx_gallery
 import sphinx_rtd_theme
 
 sys.path.insert(0, os.path.abspath('..'))
@@ -34,8 +34,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.viewcode',
     'sphinx_rtd_theme',
-    'numpydoc',
-    'sphinx_gallery.gen_gallery',
+    'numpydoc'
 ]
 
 # this is needed for some reason...
@@ -64,7 +63,7 @@ autosummary_generate = True
 source_suffix = '.rst'
 
 # Generate the plots for the gallery
-plot_gallery = True
+#plot_gallery = True
 
 # The master toctree document.
 master_doc = 'index'
@@ -122,9 +121,9 @@ htmlhelp_basename = 'minipatch-learningdoc'
 trim_doctests_flags = True
 
 # sphinx-gallery configuration
-sphinx_gallery_conf = {
-    'doc_module': 'mplearn',
-    'backreferences_dir': os.path.join('generated'),
-    'reference_url': {
-        'mplearn': None}
-}
+#sphinx_gallery_conf = {
+    #'doc_module': 'mplearn',
+    #'backreferences_dir': os.path.join('generated'),
+    #'reference_url': {
+        #'mplearn': None}
+#}
