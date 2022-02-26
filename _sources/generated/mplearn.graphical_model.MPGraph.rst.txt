@@ -1,0 +1,12 @@
+:mod:`mplearn.graphical_model`.MPGraph
+=============================================
+
+.. currentmodule:: mplearn.graphical_model
+
+.. autoclass:: MPGraph
+
+.. include:: mplearn.graphical_model.MPGraph.examples
+
+.. raw:: html
+
+    <div class="clearer"></div>

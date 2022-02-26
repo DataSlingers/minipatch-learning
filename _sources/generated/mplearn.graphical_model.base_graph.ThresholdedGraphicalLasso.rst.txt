@@ -1,0 +1,12 @@
+:mod:`mplearn.graphical_model.base_graph`.ThresholdedGraphicalLasso
+==========================================================================
+
+.. currentmodule:: mplearn.graphical_model.base_graph
+
+.. autoclass:: ThresholdedGraphicalLasso
+
+.. include:: mplearn.graphical_model.base_graph.ThresholdedGraphicalLasso.examples
+
+.. raw:: html
+
+    <div class="clearer"></div>

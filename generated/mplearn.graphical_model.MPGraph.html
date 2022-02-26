@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mplearn.graphical_model.MPGraph &mdash; minipatch-learning 0.1 documentation</title><link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> minipatch-learning
+          </a>
+              <div class="version">
+                0.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">mplearn.graphical_model</span></code>.MPGraph</a></li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">minipatch-learning</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li><code class="xref py py-mod docutils literal notranslate"><span class="pre">mplearn.graphical_model</span></code>.MPGraph</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/generated/mplearn.graphical_model.MPGraph.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="mplearn-graphical-model-mpgraph">
+<h1><a class="reference internal" href="../api.html#module-mplearn.graphical_model" title="mplearn.graphical_model"><code class="xref py py-mod docutils literal notranslate"><span class="pre">mplearn.graphical_model</span></code></a>.MPGraph<a class="headerlink" href="#mplearn-graphical-model-mpgraph" title="Permalink to this headline"></a></h1>
+<dl class="class">
+<dt id="mplearn.graphical_model.MPGraph">
+<em class="property">class </em><code class="sig-prename descclassname">mplearn.graphical_model.</code><code class="sig-name descname">MPGraph</code><span class="sig-paren">(</span><em class="sig-param">base_graph</em>, <em class="sig-param">*</em>, <em class="sig-param">minipatch_m_ratio=0.05</em>, <em class="sig-param">minipatch_n_ratio=0.5</em>, <em class="sig-param">max_k=None</em>, <em class="sig-param">assume_centered=True</em>, <em class="sig-param">ray_configure=None</em>, <em class="sig-param">n_jobs=-1</em>, <em class="sig-param">parallel_batch_size=200</em>, <em class="sig-param">parallel_post_processing=False</em>, <em class="sig-param">low_memory_mode=False</em>, <em class="sig-param">random_state=0</em>, <em class="sig-param">verbose=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mplearn/graphical_model/_minipatch_graph_selection.html#MPGraph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mplearn.graphical_model.MPGraph" title="Permalink to this definition"></a></dt>
+<dd><p>Gaussian graphical model selection with Minipatch Graph.</p>
+<p>Gaussian graphical model selection refers to the problem of inferring the
+edge set (or sparsity patterns of the precision matrix) from obersved data.
+This is a meta-algorithm that repeatedly fits base graph selectors to many
+random subsets of both observations and features (minipatches) in parallel
+and ensembles the selection events from all these base selectors. At the end
+of the algorithm, the final edge selection frequency is computed for each
+pair of nodes (i, j) as the number of times (i, j) are sampled together and
+the base graph selector puts an edge between them divided by the number of times
+(i, j) are sampled together into minipatches. The algorithm eventually selects
+the set of edges whose selection frequency is above a certain threshold.</p>
+<p>Important note: <code class="docutils literal notranslate"><span class="pre">MPGraph</span></code> assumes that all necessary pre-processing steps
+prior to Gaussian graphical model selection have already been carried out
+on the input data X. For instance, data standardization (centering and/or scaling)
+needs to be performed on the raw data prior to calling <code class="docutils literal notranslate"><span class="pre">fit()</span></code> if such
+data pre-processing is deemed necessary by the users.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>base_graph</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">estimator</span></code> instance</span></dt><dd><p>A Gaussian graphical model selector with a <code class="docutils literal notranslate"><span class="pre">fit</span></code> method that provides
+an estimate of either the precision matrix or its sparsity pattern.
+See <strong>Notes</strong> for more details.</p>
+</dd>
+<dt><strong>minipatch_m_ratio</strong><span class="classifier">float, default=0.05</span></dt><dd><p>The fraction of features/nodes to draw from X to train each base graph selector.
+Specifically, <code class="docutils literal notranslate"><span class="pre">round(minipatch_m_ratio</span> <span class="pre">*</span> <span class="pre">X.shape[1])</span></code> nodes are drawn
+into each minipatch. Thus, <code class="docutils literal notranslate"><span class="pre">minipatch_m_ratio</span></code> should be in the
+interval (0.0, 1.0]. See <strong>Notes</strong> for more details.</p>
+</dd>
+<dt><strong>minipatch_n_ratio</strong><span class="classifier">float, default=0.5</span></dt><dd><p>The fraction of observations to draw from X to train each base graph selector.
+Specifically, <code class="docutils literal notranslate"><span class="pre">round(minipatch_n_ratio</span> <span class="pre">*</span> <span class="pre">X.shape[0])</span></code> observations are drawn
+into each minipatch. Thus, <code class="docutils literal notranslate"><span class="pre">minipatch_n_ratio</span></code> should be in the
+interval (0.0, 1.0]. See <strong>Notes</strong> for more details.</p>
+</dd>
+<dt><strong>max_k</strong><span class="classifier">int, default=None.</span></dt><dd><p>The total number of minipatches to use for training the meta-algorithm.
+If set to <code class="docutils literal notranslate"><span class="pre">None</span></code>, the algorithm will automatically compute <code class="docutils literal notranslate"><span class="pre">max_k</span></code> to
+be <code class="docutils literal notranslate"><span class="pre">ceil(1</span> <span class="pre">/</span> <span class="pre">minipatch_m_ratio)</span> <span class="pre">*</span> <span class="pre">50</span></code>.</p>
+</dd>
+<dt><strong>assume_centered</strong><span class="classifier">bool, default=True.</span></dt><dd><p>If False, each column of X is centered to have a mean of zero.</p>
+</dd>
+<dt><strong>ray_configure</strong><span class="classifier">dict, default=None.</span></dt><dd><p>Dictionary with parameter names (<code class="docutils literal notranslate"><span class="pre">str</span></code>) as keys and specific parameter
+settings as values. This specifies the parameter values for the Ray framework,
+which is used to parallelize computation over minipatches.
+Unless set to <code class="docutils literal notranslate"><span class="pre">None</span></code>, <code class="docutils literal notranslate"><span class="pre">ray_configure</span></code> is required to have at least one of two
+keys: <code class="docutils literal notranslate"><span class="pre">'memory'</span></code> and <code class="docutils literal notranslate"><span class="pre">'object_store_memory'</span></code>. If set to <code class="docutils literal notranslate"><span class="pre">None</span></code>, Ray would
+automatically detect the available memory resources on the system. See the documentation
+of Ray for more details. See <strong>Notes</strong> for further discussion.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">'memory'</span></code> : int. This specifies the amount of reservable memory resource (in Gigabytes) to create.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'object_store_memory'</span></code> : int. The amount of memory (in Gigabytes) to start the object store with.</p></li>
+</ul>
+</dd>
+<dt><strong>n_jobs</strong><span class="classifier">int, default=-1.</span></dt><dd><p>The number of jobs to run in parallel. <code class="docutils literal notranslate"><span class="pre">-1</span></code> means using all processors.</p>
+</dd>
+<dt><strong>parallel_batch_size</strong><span class="classifier">int, default=200.</span></dt><dd><p>The number of tasks to dispatch at once to each worker. It is recommended
+to leave this at the default value. See documentation of <code class="docutils literal notranslate"><span class="pre">joblib.Parallel</span></code>
+for more details. See <strong>Notes</strong> for further discussion.</p>
+</dd>
+<dt><strong>parallel_post_processing</strong><span class="classifier">bool, default=False.</span></dt><dd><p>Whether to use parallelization for aggregating the selection events from all minipatches.
+Using parallelization for this task can reduce the overall runtime, but might consume
+more memory.</p>
+</dd>
+<dt><strong>low_memory_mode</strong><span class="classifier">bool, default=False.</span></dt><dd><p>Whether to clear some non-essential intermediate variables to save memory.</p>
+</dd>
+<dt><strong>random_state</strong><span class="classifier">int, default=0.</span></dt><dd><p>Controls both the randomness of sampling observations and sampling features into minipatches.</p>
+</dd>
+<dt><strong>verbose</strong><span class="classifier">int, default=0.</span></dt><dd><p>Controls the verbosity: the higher, more messages are displayed.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>More details about <code class="docutils literal notranslate"><span class="pre">base_graph</span></code>: The MPGraph meta-algorithm can be employed with
+a wide variety of thresholded Gaussian graphical model selection techniques
+as the base selector on minipatches.
+This package current provides a highly effective base selector classes -
+<code class="docutils literal notranslate"><span class="pre">minipatch_graphical_model.base_graph.ThresholdedGraphicalLasso</span></code>.
+However, user-supplied selector is also allowed as long as the selector class follows the
+same structure as the base graph selector mentioned above (i.e. has a <code class="docutils literal notranslate"><span class="pre">fit</span></code> method that
+provides an estimate of either the precision matrix or its sparsity patterns).</p></li>
+<li><p>More details about choice of minipatch size: Suppose the data X has N observations (rows)
+and M nodes (columns). Following the notations of [1], a minipatch is obtained by
+subsampling n observations and m features simultaneously without replacement from X
+using some form of randomization. The parameter <code class="docutils literal notranslate"><span class="pre">minipatch_m_ratio</span></code> represents <img class="math" src="../_images/math/0eacd91e2906fd3c1f54aadb9a8a4b7b7cb202c6.png" alt="m/M"/>
+and <code class="docutils literal notranslate"><span class="pre">minipatch_n_ratio</span></code> represents <img class="math" src="../_images/math/433066b5db2eae1c7c440731d0bd475559d74cc1.png" alt="n/N"/>. As demonstrated in [1], the performance
+of the meta-algorithm is robust for a sensible range of n and m values. The general rule
+of thumb is to take m to be 5% to 10% of M and then pick n relative to
+m such that it well exceeds the sample complexity of the base graph selector used.</p></li>
+<li><p>More details about the parallelization framework: this software uses the Ray framework
+for parallelization. Specifically, <code class="docutils literal notranslate"><span class="pre">ray_configure</span></code>, <code class="docutils literal notranslate"><span class="pre">n_jobs</span></code>, and <code class="docutils literal notranslate"><span class="pre">parallel_batch_size</span></code>
+together controls the behavior of the parallel backend. It is generally okay to leave these
+at default values. However, by the nature of parallelization framework, the computational speed
+can vary across systems with different hardware resources. For the most optimal performance,
+it is sometimes helpful to change these parameter values accordingly based on the available computing
+resources of your specific computer system.</p></li>
+<li><p>We refer the users to the original paper [1] for the detailed algorithm.</p></li>
+</ul>
+<p class="rubric">References</p>
+<dl class="citation">
+<dt class="label" id="r3ee689e998df-1"><span class="brackets">R3ee689e998df-1</span></dt>
+<dd><p>Yao, T. and Wang, M. and Allen, G. I., “Gaussian Graphical Model Selection for Huge Data
+via Minipatch Learning”, arXiv:2110.12067.</p>
+</dd>
+</dl>
+<p>The following example shows how to infer the structure of the
+Gaussian graphical model (sparsity pattern of the precision matrix) from observed data.
+&gt;&gt;&gt; import numpy as np
+&gt;&gt;&gt; from mplearn.graphical_model.base_graph import ThresholdedGraphicalLasso
+&gt;&gt;&gt; from mplearn.graphical_model import MPGraph
+&gt;&gt;&gt; N, M = 1000, 500
+&gt;&gt;&gt; precision = 1.25*np.identity(M) + np.diag(0.5 * np.ones(M - 1), 1) + np.diag(0.5 * np.ones(M - 1), -1)
+&gt;&gt;&gt; X = np.random.RandomState(0).multivariate_normal(np.zeros(M), np.linalg.inv(precision), size=N)
+&gt;&gt;&gt; base_graph = ThresholdedGraphicalLasso()
+&gt;&gt;&gt; mpgraph = MPGraph(base_graph=base_graph,
+…                   minipatch_m_ratio=(50. / M),
+…                   minipatch_n_ratio=(60. / N),
+…                   max_k=1000,
+…                   parallel_post_processing=True,
+…                   verbose=0)
+&gt;&gt;&gt; fitted_mpgraph = mpgraph.fit(X)
+&gt;&gt;&gt; estimated_graph = fitted_mpgraph.get_support(support_type=”sparse_matrix”, pi_thr=0.5)  # doctest: +SKIP</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>N_</strong><span class="classifier">int</span></dt><dd><p>The number of observations in the input data.</p>
+</dd>
+<dt><strong>M_</strong><span class="classifier">int</span></dt><dd><p>The number of features/nodes in the input data.</p>
+</dd>
+<dt><strong>Pi_hat_</strong><span class="classifier">ndarray of shape (M*(M-1)/2, )</span></dt><dd><p>The final edge selection frequency between each pair of nodes (i, j), where <img class="math" src="../_images/math/fe586aacfab85d4b053e1321bc0b5a4f3c153c19.png" alt="0\leq i &lt; j \leq M-1"/>.
+Specifically, <code class="docutils literal notranslate"><span class="pre">Pi_hat_[0]</span></code> represents the selection frequency of the edge between the node pair (0, 1),
+<code class="docutils literal notranslate"><span class="pre">Pi_hat_[1]</span></code> represents the selection frequency of the edge between the node pair (0, 2), so on and so forth.
+Each element is in the interval [0.0, 1.0]. A larger value indicates that the corresponding
+edge is more stable.</p>
+</dd>
+<dt><strong>S_val_vec_</strong><span class="classifier">ndarray of shape (M*(M-1)/2, )</span></dt><dd><p>The total number of times each node pair (i, j) is sampled together into minipatches and
+there is an estimated edge between them as determined by the base graph selectors.
+The indexing of <code class="docutils literal notranslate"><span class="pre">S_val_vec_</span></code> is the same as <code class="docutils literal notranslate"><span class="pre">Pi_hat_</span></code>.
+If <code class="docutils literal notranslate"><span class="pre">low_memory_mode=True</span></code>, this would be set to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+</dd>
+<dt><strong>D_val_vec_</strong><span class="classifier">ndarray of shape (M*(M-1)/2, )</span></dt><dd><p>The total number of times each node pair (i, j) is sampled together into minipatches.
+The indexing of <code class="docutils literal notranslate"><span class="pre">D_val_vec_</span></code> is the same as <code class="docutils literal notranslate"><span class="pre">Pi_hat_</span></code>.
+If <code class="docutils literal notranslate"><span class="pre">low_memory_mode=True</span></code>, this would be set to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="method">
+<dt id="mplearn.graphical_model.MPGraph.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">X</em>, <em class="sig-param">y=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mplearn/graphical_model/_minipatch_graph_selection.html#MPGraph.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mplearn.graphical_model.MPGraph.fit" title="Permalink to this definition"></a></dt>
+<dd><p>Fit the MPGraph model to X.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>X</strong><span class="classifier">ndarray of shape (n_samples, n_features)</span></dt><dd><p>Data from which to infer the graphical model structure. Note that data frame or sparse matrix format
+are not allowed. Also, the dtype of X has to be numeric (e.g. float, int). NaN/Inf are not
+allowed in the input.</p>
+</dd>
+<dt><strong>y</strong><span class="classifier">Ignored.</span></dt><dd><p>Not used, present for API consistency.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>self</strong><span class="classifier">object</span></dt><dd><p>Fitted estimator.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="mplearn.graphical_model.MPGraph.get_params">
+<code class="sig-name descname">get_params</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">deep=True</em><span class="sig-paren">)</span><a class="headerlink" href="#mplearn.graphical_model.MPGraph.get_params" title="Permalink to this definition"></a></dt>
+<dd><p>Get parameters for this estimator.
+Parameters
+———-
+deep : bool, default=True</p>
+<blockquote>
+<div><p>If True, will return the parameters for this estimator and
+contained subobjects that are estimators.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>params<span class="classifier">dict</span></dt><dd><p>Parameter names mapped to their values.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="mplearn.graphical_model.MPGraph.get_support">
+<code class="sig-name descname">get_support</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">support_type='mask'</em>, <em class="sig-param">pi_thr=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mplearn/graphical_model/_minipatch_graph_selection.html#MPGraph.get_support"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mplearn.graphical_model.MPGraph.get_support" title="Permalink to this definition"></a></dt>
+<dd><p>Get a mask, indicator, matrix, or node pair index, of the edges selected by the meta-algorithm.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>support_type</strong><span class="classifier">{‘mask’, ‘indicator’, ‘sparse_matrix’, ‘node_pair’}, default=’mask’</span></dt><dd><p>Specify the format in which the estimated graph structure is returned.</p>
+</dd>
+<dt><strong>pi_thr</strong><span class="classifier">float, default=0.5</span></dt><dd><p>The selection frequency threshold above which an edge is considered selected.
+A larger threshold indicates a more stringent criterion.
+For many problems, setting this threshold to 0.5 is a reasonable choice.
+Note that this threshold must be within (0.0, 1.0).</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>support</strong><span class="classifier">ndarray or coo_matrix</span></dt><dd><ul class="simple">
+<li><p>If <code class="docutils literal notranslate"><span class="pre">support_type='mask'</span></code>, then a boolean array of shape (M*(M-1)/2, ) indicating
+presence of edges between each pair of nodes (i, j), where <img class="math" src="../_images/math/fe586aacfab85d4b053e1321bc0b5a4f3c153c19.png" alt="0\leq i &lt; j \leq M-1"/>.
+Specifically, <code class="docutils literal notranslate"><span class="pre">support[0]=True</span></code> iff there is an edge between the node pair (0, 1),
+<code class="docutils literal notranslate"><span class="pre">support[1]=True</span></code> iff there is an edge between the node pair (0, 2), so on and so forth.</p></li>
+<li><p>If <code class="docutils literal notranslate"><span class="pre">support_type='indicator'</span></code>, then a binary array of shape (M*(M-1)/2, ) indicating
+presence of edges between each pair of nodes (i, j), <img class="math" src="../_images/math/60e4450244632947ba157a4cf04b0f61fb104678.png" alt="0\leq i &lt; j\leq M-1"/>.
+Specifically, <code class="docutils literal notranslate"><span class="pre">support[0]=1</span></code> if there is an edge between the node pair (0, 1) and
+<code class="docutils literal notranslate"><span class="pre">support[0]=0</span></code> otherwise. The indexing is the same as ‘mask’.</p></li>
+<li><p>If <code class="docutils literal notranslate"><span class="pre">support_type='sparse_matrix'</span></code>, then a sparse matrix in COO format (coo_matrix)
+of shape (M, M) representing the adjacency matrix of the estimated graph structure.
+The nonzero entries of this sparse matrix indicate presence of edges. Note that one
+may convert the adjacency matrix to a dense array by using <code class="docutils literal notranslate"><span class="pre">support.toarray()</span></code>. However,
+converting to dense array can consume a large amount of memory for large M, so it
+is usually desirable to keep this in sparse matrix format.</p></li>
+<li><p>If <code class="docutils literal notranslate"><span class="pre">support_type='node_pair'</span></code>, then a ndarray of shape (# selected edges, 2) representing
+node pairs (i, j) between which there is an estimated edge, <img class="math" src="../_images/math/60e4450244632947ba157a4cf04b0f61fb104678.png" alt="0\leq i &lt; j\leq M-1"/>.
+Specifically, each row is a node pair with an estimated edge.</p></li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="mplearn.graphical_model.MPGraph.set_params">
+<code class="sig-name descname">set_params</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">**params</em><span class="sig-paren">)</span><a class="headerlink" href="#mplearn.graphical_model.MPGraph.set_params" title="Permalink to this definition"></a></dt>
+<dd><p>Set the parameters of this estimator.
+The method works on simple estimators as well as on nested objects. The latter have
+parameters of the form <code class="docutils literal notranslate"><span class="pre">&lt;component&gt;__&lt;parameter&gt;</span></code> so that it’s
+possible to update each component of a nested object.
+Parameters
+———-
+<a href="#id2"><span class="problematic" id="id3">**</span></a>params : dict</p>
+<blockquote>
+<div><p>Estimator parameters.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>self<span class="classifier">estimator instance</span></dt><dd><p>Estimator instance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<div class="clearer"></div></div>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Tianyi Yao.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

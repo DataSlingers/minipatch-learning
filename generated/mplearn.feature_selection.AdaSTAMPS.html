@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mplearn.feature_selection.AdaSTAMPS &mdash; minipatch-learning 0.1 documentation</title><link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> minipatch-learning
+          </a>
+              <div class="version">
+                0.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">mplearn.feature_selection</span></code>.AdaSTAMPS</a></li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">minipatch-learning</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li><code class="xref py py-mod docutils literal notranslate"><span class="pre">mplearn.feature_selection</span></code>.AdaSTAMPS</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/generated/mplearn.feature_selection.AdaSTAMPS.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="mplearn-feature-selection-adastamps">
+<h1><a class="reference internal" href="../api.html#module-mplearn.feature_selection" title="mplearn.feature_selection"><code class="xref py py-mod docutils literal notranslate"><span class="pre">mplearn.feature_selection</span></code></a>.AdaSTAMPS<a class="headerlink" href="#mplearn-feature-selection-adastamps" title="Permalink to this headline"></a></h1>
+<dl class="class">
+<dt id="mplearn.feature_selection.AdaSTAMPS">
+<em class="property">class </em><code class="sig-prename descclassname">mplearn.feature_selection.</code><code class="sig-name descname">AdaSTAMPS</code><span class="sig-paren">(</span><em class="sig-param">base_selector</em>, <em class="sig-param">*</em>, <em class="sig-param">minipatch_m_ratio=0.05</em>, <em class="sig-param">minipatch_n_ratio=0.5</em>, <em class="sig-param">sampling_options=None</em>, <em class="sig-param">stopping_criteria_options=None</em>, <em class="sig-param">random_state=0</em>, <em class="sig-param">keep_all_iters=True</em>, <em class="sig-param">max_iters_to_keep=None</em>, <em class="sig-param">verbose=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mplearn/feature_selection/_adaptive_stable_minipatch_selection.html#AdaSTAMPS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mplearn.feature_selection.AdaSTAMPS" title="Permalink to this definition"></a></dt>
+<dd><p>Feature selection with Adaptive Stable Minipatch Selection.</p>
+<p>This is a meta-algorithm that repeatedly fits base feature selectors to many
+random or adaptively chosen subsets of both observations and features (minipatches)
+and ensembles the selection events from all these base selectors. At the end
+of the algorithm, the final selection frequency is computed for each
+input feature as the number of times it is sampled and then selected by base selectors
+divided by the number of times it is sampled into minipatches. The selection
+frequency signifies the importance of features. The algorithm eventually selects
+the set of features whose selection frequency is above a certain threshold (can be
+either user-specific or determined automatically).</p>
+<p>Important note: <code class="docutils literal notranslate"><span class="pre">AdaSTAMPS</span></code> assumes that all necessary pre-processing steps
+prior to feature selection have already been carried out on the input data (X, y).
+For instance, data standardization (centering and/or scaling) needs to be
+performed on the raw data prior to calling <code class="docutils literal notranslate"><span class="pre">fit()</span></code> if such data pre-processing
+is deemed necessary by the users.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>base_selector</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">Selector</span></code> instance</span></dt><dd><p>A feature selector with a <code class="docutils literal notranslate"><span class="pre">fit</span></code> method that provides
+binary selection indicators (1 for selected features and
+0 for unselected features). See <strong>Notes</strong> for more details.</p>
+</dd>
+<dt><strong>minipatch_m_ratio</strong><span class="classifier">float, default=0.05</span></dt><dd><p>The fraction of features to draw from X to train each base selector.
+Specifically, <code class="docutils literal notranslate"><span class="pre">round(minipatch_m_ratio</span> <span class="pre">*</span> <span class="pre">X.shape[1])</span></code> features are drawn
+into each minipatch. Thus, <code class="docutils literal notranslate"><span class="pre">minipatch_m_ratio</span></code> should be in the
+interval (0.0, 1.0]. See <strong>Notes</strong> for more details.</p>
+</dd>
+<dt><strong>minipatch_n_ratio</strong><span class="classifier">float, default=0.5</span></dt><dd><p>The fraction of observations to draw from X to train each base selector.
+Specifically, <code class="docutils literal notranslate"><span class="pre">round(minipatch_n_ratio</span> <span class="pre">*</span> <span class="pre">X.shape[0])</span></code> observations are drawn
+into each minipatch. Thus, <code class="docutils literal notranslate"><span class="pre">minipatch_n_ratio</span></code> should be in the
+interval (0.0, 1.0]. See <strong>Notes</strong> for more details.</p>
+</dd>
+<dt><strong>sampling_options</strong><span class="classifier">dict, default=None</span></dt><dd><p>Dictionary with parameter names (<code class="docutils literal notranslate"><span class="pre">str</span></code>) as keys and specific parameter
+settings as values. This specifies the randomization scheme used to sample
+features into minipatches. Unless set to <code class="docutils literal notranslate"><span class="pre">None</span></code>, <code class="docutils literal notranslate"><span class="pre">sampling_options</span></code> is
+required to have a key named <code class="docutils literal notranslate"><span class="pre">'mode'</span></code>, whose value must be one of {‘ee’, ‘prob’, ‘uniform’}.
+It is recommended to set <code class="docutils literal notranslate"><span class="pre">sampling_options</span></code> to <code class="docutils literal notranslate"><span class="pre">None</span></code> for starters, which uses the
+default Exploitation &amp; Exploration adaptive feature sampling scheme with parameter
+values set to respective recommended values as described below. See <strong>Notes</strong> for more
+details.</p>
+<ul class="simple">
+<li><p>If <code class="docutils literal notranslate"><span class="pre">'mode'</span></code> has value ‘ee’, it uses the Exploitation &amp; Exploration scheme to
+adaptively sample features into minipatches. In this case, <code class="docutils literal notranslate"><span class="pre">sampling_options</span></code>
+is required to have the following parameters as additional keys:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">'E'</span></code> : int. The number of burn-in epochs during which every feature is sampled
+exactly <code class="docutils literal notranslate"><span class="pre">'E'</span></code> times to get an initial guess of feature importance before starting
+the adaptive sampling of features. A value of 10 generally works well for many problems.
+Note that a larger <code class="docutils literal notranslate"><span class="pre">'E'</span></code> generally requires increase the maximum number of
+iterations (<code class="docutils literal notranslate"><span class="pre">'max_k'</span></code>) in <code class="docutils literal notranslate"><span class="pre">stopping_criteria_options</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'active_set_thr'</span></code> : float. The selection frequency threshold above which
+a feature is put into the active set during the adaptive sampling stage.
+A value of 0.1 generally works well for many problems. Note that its value
+should be in the interval (0.0, 1.0). A larger value generally means fewer
+features in the active set.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'gamma_min'</span></code> : float. The minimum proportion of features in the active set to
+sample into minipatches at the beginning of the adaptive sampling stage.
+It is recommened to fix its value to 0.5. Note that its value should be in
+the interval (0.0, 1.0), and should not exceed the value of <code class="docutils literal notranslate"><span class="pre">'gamma_max'</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'gamma_max'</span></code> : float. The maximum proportion of features in the active set to
+sample into minipatches as the adaptive sampling scheme proceeds. It is recommened
+to fix its value to 1.0. Note that its value should be in the interval (0.0, 1.0).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'gamma_len'</span></code> : int. The number of iterations it takes for the adaptive feature
+sampler to go from <code class="docutils literal notranslate"><span class="pre">'gamma_min'</span></code> to <code class="docutils literal notranslate"><span class="pre">'gamma_max'</span></code>. This controls the trade-off
+between exploiting the active set and exploring the remaining input feature space.
+In general, a smaller value favors exploitation while a larger value favors exploration.
+A value in the range [50, 500] generally works well for many problems.</p></li>
+</ul>
+</li>
+<li><p>If <code class="docutils literal notranslate"><span class="pre">'mode'</span></code> has value ‘prob’, it uses the Probabilistic scheme to adaptively sample
+features into minipatches. In this case, <code class="docutils literal notranslate"><span class="pre">sampling_options</span></code> is required to have
+the following parameters as additional keys:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">'E'</span></code> : Int. This is the same as the <code class="docutils literal notranslate"><span class="pre">'E'</span></code> parameter in the case of <code class="docutils literal notranslate"><span class="pre">'mode'</span></code> being ‘ee’.
+See the descriptions above for details.</p></li>
+</ul>
+</li>
+<li><p>If <code class="docutils literal notranslate"><span class="pre">'mode'</span></code> has value ‘uniform’, it samples features uniformly at random into minipatches.
+In this case, <code class="docutils literal notranslate"><span class="pre">sampling_options</span></code> does not need to have other key-value pairs.</p></li>
+</ul>
+</dd>
+<dt><strong>stopping_criteria_options</strong><span class="classifier">dict, default=None</span></dt><dd><p>Dictionary with parameter names (<code class="docutils literal notranslate"><span class="pre">str</span></code>) as keys and specific parameter
+settings as values. This specifies parameter values for the data-driven stopping rule,
+which stops the meta-algorithm when the rank ordering of the top features in terms of
+selection frequency remain unchanged for the past <code class="docutils literal notranslate"><span class="pre">'num_last_iterations'</span></code>.
+Unless set to <code class="docutils literal notranslate"><span class="pre">None</span></code>, <code class="docutils literal notranslate"><span class="pre">stopping_criteria_options</span></code> is required to have
+4 keys: <code class="docutils literal notranslate"><span class="pre">'tau_u'</span></code>, <code class="docutils literal notranslate"><span class="pre">'tau_l'</span></code>, <code class="docutils literal notranslate"><span class="pre">'max_k'</span></code>, and <code class="docutils literal notranslate"><span class="pre">'num_last_iterations'</span></code>. It is recommended
+to set <code class="docutils literal notranslate"><span class="pre">stopping_criteria_options</span></code> to <code class="docutils literal notranslate"><span class="pre">None</span></code> for starters, which sets the parameter values to
+the respective default as described below.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">'tau_u'</span></code> : int. This specifies the maximum number of top features
+whose rank orderings should be considered when assessing the stopping rule. It is
+recommened to set its value to well exceed the expected number of truly informative features.
+The default value is set to 30. Note that its value should be much smaller than the total
+number of input features.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'tau_l'</span></code> : int. This specifies the minimum number of top features
+whose rank orderings should be considered when assessing the stopping rule. It is
+recommened to set its value to well exceed the expected number of truly informative features.
+The default value is set to 15. Note that its value should be much smaller than <code class="docutils literal notranslate"><span class="pre">'tau_u'</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'num_last_iterations'</span></code> : int. The algorithm stops when the rank ordering of the
+top features in terms of selection frequency remain unchanged
+for the past <code class="docutils literal notranslate"><span class="pre">'num_last_iterations'</span></code>. It is recommended to fix its value to 100. Note that
+a unreasonably large value could render the stopping rule ineffective.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'max_k'</span></code> : int. The maximum number of iterations to run the meta-algorithm if the data-driven
+stopping rule has not stopped it earlier. The default value is set to 5000. If <code class="docutils literal notranslate"><span class="pre">'mode'</span></code> of
+<code class="docutils literal notranslate"><span class="pre">sampling_options</span></code> is set to {‘ee’, ‘prob’} and <code class="docutils literal notranslate"><span class="pre">'max_k'</span></code> is set to <code class="docutils literal notranslate"><span class="pre">None</span></code>, the algorithm will
+automatically compute <code class="docutils literal notranslate"><span class="pre">'max_k'</span></code> to be 5 times the number of burn-in iterations.</p></li>
+</ul>
+</dd>
+<dt><strong>random_state</strong><span class="classifier">int, default=0</span></dt><dd><p>Controls both the randomness of sampling observations and sampling features into minipatches.</p>
+</dd>
+<dt><strong>keep_all_iters</strong><span class="classifier">bool, default=True</span></dt><dd><p>Whether to store and output intermediate featrue selection frequency across all iterations. It could be
+useful to visualize selection frequency of all features versus iteration number for qualitatively
+discovering informative features. However, if the number of input feature is large (e.g. hundreds of thousands),
+then it is recommended to set this to <code class="docutils literal notranslate"><span class="pre">False</span></code> to avoid consuming too much memory. If set to <code class="docutils literal notranslate"><span class="pre">False</span></code>, it is
+required to set a value for <code class="docutils literal notranslate"><span class="pre">max_iters_to_keep</span></code>.</p>
+</dd>
+<dt><strong>max_iters_to_keep</strong><span class="classifier">int, default=None</span></dt><dd><p>This value is ignored if <code class="docutils literal notranslate"><span class="pre">keep_all_iters</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code>. Otherwise, this specifies the
+number of iterations (counting backwards from the last iteration) for which feature
+selection frequency should be stored and output. Note that <code class="docutils literal notranslate"><span class="pre">max_iters_to_keep</span></code> should be
+at least as large as the <code class="docutils literal notranslate"><span class="pre">'num_last_iterations'</span></code> of <code class="docutils literal notranslate"><span class="pre">stopping_criteria_options</span></code> (which is the
+default when <code class="docutils literal notranslate"><span class="pre">max_iters_to_keep</span></code> is set to <code class="docutils literal notranslate"><span class="pre">None</span></code>).</p>
+</dd>
+<dt><strong>verbose</strong><span class="classifier">{0, 1, 2}</span></dt><dd><p>Controls the verbosity: the higher, more messages are displayed.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>More details about <code class="docutils literal notranslate"><span class="pre">base_selector</span></code>: The AdaSTAMPS meta-algorithm can be employed with
+a wide variety of feature selection techniques as the base selector on minipatches.
+This package current provides two highly efficient base selector classes -
+<code class="docutils literal notranslate"><span class="pre">minipatch_feature_selection.base_selector.ThresholdedOLS</span></code> for regression
+problems and <code class="docutils literal notranslate"><span class="pre">minipatch_feature_selection.base_selector.DecisionTreeSelector</span></code> for
+both regression and classification problems. However, user-supplied selector is
+also allowed as long as the selector class follows the same structure as the two
+base selectors mentioned above (i.e. has a <code class="docutils literal notranslate"><span class="pre">fit</span></code> method that accepts minipatch
+feature indices and provides binary selection indicators (1 for selected features and
+0 for unselected features).</p></li>
+<li><p>More details about choice of minipatch size: Suppose the data X has N observations (rows)
+and M features (columns). Following the notations of [1], a minipatch is obtained by
+subsampling n observations and m features simultaneously without replacement from X
+using some form of randomization. The parameter <code class="docutils literal notranslate"><span class="pre">minipatch_m_ratio</span></code> represents <img class="math" src="../_images/math/0eacd91e2906fd3c1f54aadb9a8a4b7b7cb202c6.png" alt="m/M"/>
+and <code class="docutils literal notranslate"><span class="pre">minipatch_n_ratio</span></code> represents <img class="math" src="../_images/math/433066b5db2eae1c7c440731d0bd475559d74cc1.png" alt="n/N"/>. As demonstrated in [1], the performance
+of the meta-algorithm is robust for a sensible range of n and m values. The general rule
+of thumb is to take m to well exceed the expected number of true informative features
+(e.g. 3-10 times the expected number of true informative features) and then pick n relative to
+m such that it well exceeds the sample complexity of the base selector used.</p></li>
+<li><p>We refer the users to the original paper [1] for detailed algorithms for the various
+sampling procedures and the stopping rule.</p></li>
+</ul>
+<p class="rubric">References</p>
+<dl class="citation">
+<dt class="label" id="rd4534dbd4ccf-1"><span class="brackets">Rd4534dbd4ccf-1</span></dt>
+<dd><p>Yao, T. and Allen, G. I., “Feature Selection for Huge Data via Minipatch Learning”,
+arXiv:2010.08529.</p>
+</dd>
+</dl>
+<p>The following example shows how to retrieve the 4 truly informative
+features in the sparse regression dataset.
+&gt;&gt;&gt; from sklearn.datasets import make_sparse_uncorrelated
+&gt;&gt;&gt; from mplearn.feature_selection.base_selector import ThresholdedOLS
+&gt;&gt;&gt; from mplearn.feature_selection import AdaSTAMPS
+&gt;&gt;&gt; X, y = make_sparse_uncorrelated(n_samples=100, n_features=10, random_state=0)
+&gt;&gt;&gt; thresholded_ols = ThresholdedOLS(num_features_to_select=None, screening_thresh=None)
+&gt;&gt;&gt; selector = AdaSTAMPS(base_selector=thresholded_ols,
+…                      minipatch_m_ratio=0.5,
+…                      minipatch_n_ratio=0.5,
+…                      random_state=123,
+…                      verbose=0)
+&gt;&gt;&gt; fitted_selector = selector.fit(X, y)
+&gt;&gt;&gt; fitted_selector.get_support(indices=True, pi_thr=0.5)
+array([0, 1, 2, 3])
+&gt;&gt;&gt; X_new = fitted_selector.transform(X, pi_thr=0.5)
+&gt;&gt;&gt; X_new.shape
+(100, 4)
+&gt;&gt;&gt; fitted_selector.visualize_selection_frequency(max_features_to_plot=None)  # doctest: +SKIP</p>
+<dl class="field-list">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><dl>
+<dt><strong>last_k_</strong><span class="classifier">int</span></dt><dd><p>The total number of iterations for which the meta-algorithm has run.</p>
+</dd>
+<dt><strong>Pi_hat_last_k_</strong><span class="classifier">array of shape (n_features, )</span></dt><dd><p>The final selection frequency for each of the input features. Each element is in the interval [0.0, 1.0].
+A larger value indicates that the corresponding feature is more informative, vice versa.</p>
+</dd>
+<dt><strong>full_Pi_hat_seq_</strong><span class="classifier">array of shape (n_features, <code class="docutils literal notranslate"><span class="pre">last_k_</span></code>) or (n_features, <code class="docutils literal notranslate"><span class="pre">max_iters_to_keep</span></code>)</span></dt><dd><p>If <code class="docutils literal notranslate"><span class="pre">keep_all_iters</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code>, then this is an array of shape (n_features, <code class="docutils literal notranslate"><span class="pre">last_k_</span></code>) containing
+the selection frequency of all input features from first iteration to the last. If <code class="docutils literal notranslate"><span class="pre">keep_all_iters</span></code>
+is <code class="docutils literal notranslate"><span class="pre">False</span></code>, then this is an array of shape (n_features, <code class="docutils literal notranslate"><span class="pre">max_iters_to_keep</span></code>) containing the
+selection frequency of all input features for the last <code class="docutils literal notranslate"><span class="pre">max_iters_to_keep</span></code> iterations.</p>
+</dd>
+<dt><strong>full_Pi_hat_k_seq_</strong><span class="classifier">array of shape (<code class="docutils literal notranslate"><span class="pre">last_k_</span></code>, ) or (<code class="docutils literal notranslate"><span class="pre">max_iters_to_keep</span></code>, )</span></dt><dd><p>This contains the iteration numbers corresponding to the columns of <code class="docutils literal notranslate"><span class="pre">full_Pi_hat_seq_</span></code>.</p>
+</dd>
+<dt><strong>burn_in_length_</strong><span class="classifier">int</span></dt><dd><p>The total number of iterations spent in the burn-in stage. If <code class="docutils literal notranslate"><span class="pre">'mode'</span></code> of <code class="docutils literal notranslate"><span class="pre">sampling_options</span></code>
+is set to ‘uniform’ or if <code class="docutils literal notranslate"><span class="pre">keep_all_iters</span></code> is <code class="docutils literal notranslate"><span class="pre">False</span></code>, this is set to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="method">
+<dt id="mplearn.feature_selection.AdaSTAMPS.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">X</em>, <em class="sig-param">y</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mplearn/feature_selection/_adaptive_stable_minipatch_selection.html#AdaSTAMPS.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mplearn.feature_selection.AdaSTAMPS.fit" title="Permalink to this definition"></a></dt>
+<dd><p>Fit the AdaSTAMPS model to data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>X</strong><span class="classifier">ndarray of shape (n_samples, n_features)</span></dt><dd><p>The training input samples. Note that data frame or sparse matrix format
+are not allowed. Also, the dtype of X has to be numeric (e.g. float, int).
+The algorithm expects that all appropriate preprocessing steps on X have been completed.</p>
+</dd>
+<dt><strong>y</strong><span class="classifier">ndarray of shape (n_samples,)</span></dt><dd><p>The target values. Note that for classification problems (categorical y),
+the input y should contain integers denoting class labels instead of actual
+class names (<code class="docutils literal notranslate"><span class="pre">str</span></code>). In other words, the dtype of y has to be numeric (e.g. float, int).</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>self</strong><span class="classifier">object</span></dt><dd><p>Fitted estimator.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Allows NaN/Inf in the input if the underlying estimator does as well.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mplearn.feature_selection.AdaSTAMPS.get_params">
+<code class="sig-name descname">get_params</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">deep=True</em><span class="sig-paren">)</span><a class="headerlink" href="#mplearn.feature_selection.AdaSTAMPS.get_params" title="Permalink to this definition"></a></dt>
+<dd><p>Get parameters for this estimator.
+Parameters
+———-
+deep : bool, default=True</p>
+<blockquote>
+<div><p>If True, will return the parameters for this estimator and
+contained subobjects that are estimators.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>params<span class="classifier">dict</span></dt><dd><p>Parameter names mapped to their values.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="mplearn.feature_selection.AdaSTAMPS.get_support">
+<code class="sig-name descname">get_support</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">indices=False</em>, <em class="sig-param">pi_thr=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mplearn/feature_selection/_adaptive_stable_minipatch_selection.html#AdaSTAMPS.get_support"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mplearn.feature_selection.AdaSTAMPS.get_support" title="Permalink to this definition"></a></dt>
+<dd><p>Get a mask, or integer index, of the features selected by the meta-algorithm.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>indices</strong><span class="classifier">bool, default=False</span></dt><dd><p>If True, the return value will be an array of integers, rather
+than a boolean mask.</p>
+</dd>
+<dt><strong>pi_thr</strong><span class="classifier">float, default=None</span></dt><dd><p>The selection frequency threshold above which a feature is considered selected.
+A larger threshold indicates a more stringent criterion.
+By default (<code class="docutils literal notranslate"><span class="pre">None</span></code>), a data-driven procedure is run to choose this threshold
+automatically. This is generally recommended, however, this procedure might
+take a long time if [# input features] is large (e.g. hundreds of thousands).
+For many problems, setting this threshold to 0.5 is a reasonable choice.
+Note that this threshold must be within (0.0, 1.0).</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>support</strong><span class="classifier">array</span></dt><dd><p>If <code class="docutils literal notranslate"><span class="pre">indices</span></code> is <code class="docutils literal notranslate"><span class="pre">False</span></code>, this is a boolean array of shape
+[# input features], in which an element is True iff its
+corresponding feature is selected by the algorithm. If <code class="docutils literal notranslate"><span class="pre">indices</span></code> is
+<code class="docutils literal notranslate"><span class="pre">True</span></code>, this is an integer array of shape [# output features] whose
+values are indices into the input feature vector.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="mplearn.feature_selection.AdaSTAMPS.set_params">
+<code class="sig-name descname">set_params</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">**params</em><span class="sig-paren">)</span><a class="headerlink" href="#mplearn.feature_selection.AdaSTAMPS.set_params" title="Permalink to this definition"></a></dt>
+<dd><p>Set the parameters of this estimator.
+The method works on simple estimators as well as on nested objects. The latter have
+parameters of the form <code class="docutils literal notranslate"><span class="pre">&lt;component&gt;__&lt;parameter&gt;</span></code> so that it’s
+possible to update each component of a nested object.
+Parameters
+———-
+<a href="#id2"><span class="problematic" id="id3">**</span></a>params : dict</p>
+<blockquote>
+<div><p>Estimator parameters.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>self<span class="classifier">estimator instance</span></dt><dd><p>Estimator instance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="mplearn.feature_selection.AdaSTAMPS.transform">
+<code class="sig-name descname">transform</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">X</em>, <em class="sig-param">pi_thr=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mplearn/feature_selection/_adaptive_stable_minipatch_selection.html#AdaSTAMPS.transform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mplearn.feature_selection.AdaSTAMPS.transform" title="Permalink to this definition"></a></dt>
+<dd><p>Reduce X to the selected features.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>X</strong><span class="classifier">ndarray of shape (n_samples, n_features)</span></dt><dd><p>The input samples. Note that data frame or sparse matrix format
+are not allowed. Also, the dtype of X has to be numeric (e.g. float, int).</p>
+</dd>
+<dt><strong>pi_thr</strong><span class="classifier">float, default=None</span></dt><dd><p>The selection frequency threshold above which a feature is considered selected.
+See the documentations of <code class="docutils literal notranslate"><span class="pre">get_support</span></code> for details.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>X_r</strong><span class="classifier">ndarray of shape (n_samples, n_selected_features)</span></dt><dd><p>The input samples with only the selected features.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="mplearn.feature_selection.AdaSTAMPS.visualize_selection_frequency">
+<code class="sig-name descname">visualize_selection_frequency</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">max_features_to_plot=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mplearn/feature_selection/_adaptive_stable_minipatch_selection.html#AdaSTAMPS.visualize_selection_frequency"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mplearn.feature_selection.AdaSTAMPS.visualize_selection_frequency" title="Permalink to this definition"></a></dt>
+<dd><p>Visualize the selection frequency of features</p>
+<p>It is generally useful to visualize the selection frequency
+of the input features versus number of iterations for better
+insights into the estimated importance of the features.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>max_features_to_plot</strong><span class="classifier">int, default=None</span></dt><dd><p>Controls the maximum number of features whose selection frequency
+over iterations are visualized. By default (‘None`),
+all input features are shown. However, such visualization
+might consume too much memory if the number of input feature
+is too large (e.g. 5000). In such cases, consider setting
+<code class="docutils literal notranslate"><span class="pre">max_features_to_plot</span></code> to be much smaller than n_features,
+which will only plot a small fraction of features whose
+selection frequency is below 0.3 to save on memory consumption.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>None</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<div class="clearer"></div></div>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Tianyi Yao.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mplearn.graphical_model._minipatch_graph_selection &mdash; minipatch-learning 0.1 documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> minipatch-learning
+          </a>
+              <div class="version">
+                0.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">minipatch-learning</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      <li>mplearn.graphical_model._minipatch_graph_selection</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for mplearn.graphical_model._minipatch_graph_selection</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">combinations</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">sklearn.utils</span> <span class="kn">import</span> <span class="n">as_float_array</span><span class="p">,</span> <span class="n">check_array</span>
+<span class="kn">from</span> <span class="nn">sklearn.utils.validation</span> <span class="kn">import</span> <span class="n">check_is_fitted</span>
+<span class="kn">from</span> <span class="nn">sklearn.base</span> <span class="kn">import</span> <span class="n">clone</span>
+<span class="kn">from</span> <span class="nn">sklearn.preprocessing</span> <span class="kn">import</span> <span class="n">scale</span>
+<span class="kn">from</span> <span class="nn">scipy.sparse</span> <span class="kn">import</span> <span class="n">triu</span><span class="p">,</span> <span class="n">coo_matrix</span>
+<span class="kn">import</span> <span class="nn">joblib</span>
+<span class="kn">from</span> <span class="nn">joblib</span> <span class="kn">import</span> <span class="n">Parallel</span><span class="p">,</span> <span class="n">delayed</span>
+<span class="kn">from</span> <span class="nn">ray.util.joblib</span> <span class="kn">import</span> <span class="n">register_ray</span>
+<span class="kn">import</span> <span class="nn">ray</span>
+
+<span class="kn">from</span> <span class="nn">..common</span> <span class="kn">import</span> <span class="n">BaseLearner</span>
+
+
+<span class="k">def</span> <span class="nf">_extract_indices</span><span class="p">(</span><span class="n">Theta_tilde_k</span><span class="p">,</span> <span class="n">Fk</span><span class="p">,</span> <span class="n">data_type</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Extract node pair indices where there are estimated edges.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Theta_tilde_k : ndarray of shape (m ,m)</span>
+<span class="sd">        The final graph estimate on a minipatch.</span>
+
+<span class="sd">    Fk : ndarray of shape (m, )</span>
+<span class="sd">        The integer index of nodes that are sampled into the current minipatch.</span>
+
+<span class="sd">    data_type : ndarray of shape (1, )</span>
+<span class="sd">        The `data_type.dtype` determines the data type of the</span>
+<span class="sd">        returned results.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># find the (i_prime, j_prime) that has an edge</span>
+    <span class="n">selected_ind_prime</span> <span class="o">=</span> <span class="n">triu</span><span class="p">(</span><span class="n">Theta_tilde_k</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># find the (i, j) that is sampled and selected</span>
+    <span class="n">selected_ind_row</span> <span class="o">=</span> <span class="n">Fk</span><span class="p">[</span><span class="n">selected_ind_prime</span><span class="o">.</span><span class="n">row</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">data_type</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">selected_ind_col</span> <span class="o">=</span> <span class="n">Fk</span><span class="p">[</span><span class="n">selected_ind_prime</span><span class="o">.</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">data_type</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">selected_ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">selected_ind_row</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">selected_ind_col</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># get the indices that are sampled</span>
+    <span class="n">sampled_ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="n">Fk</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">data_type</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">sampled_ind</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">Fk</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">data_type</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+
+    <span class="n">combined_ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">sampled_ind</span><span class="p">,</span> <span class="n">selected_ind</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">combined_ind</span>
+
+
+<span class="k">def</span> <span class="nf">_graph_selection_single_fit</span><span class="p">(</span><span class="n">base_graph</span><span class="p">,</span> <span class="n">X_Ik_Fk</span><span class="p">,</span> <span class="n">Fk</span><span class="p">,</span> <span class="n">data_type</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Fit the base graph selector on one minipatch.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    base_graph : ``estimator`` instance</span>
+<span class="sd">        An instance of the base graph selector.</span>
+
+<span class="sd">    X_Ik_Fk : ndarray of shape (n, m)</span>
+<span class="sd">        The sampled minipatch with n observations and m nodes.</span>
+
+<span class="sd">    Fk : ndarray of shape (m, )</span>
+<span class="sd">        The integer index of nodes that are sampled into the current minipatch.</span>
+
+<span class="sd">    data_type : ndarray of shape (1, )</span>
+<span class="sd">        The `data_type.dtype` determines the data type of the</span>
+<span class="sd">        returned results.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">fitted_base_graph</span> <span class="o">=</span> <span class="n">base_graph</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_Ik_Fk</span><span class="p">)</span>
+
+    <span class="n">S_D_vec_k</span> <span class="o">=</span> <span class="n">_extract_indices</span><span class="p">(</span><span class="n">fitted_base_graph</span><span class="o">.</span><span class="n">Theta_tilde_</span><span class="p">,</span> <span class="n">Fk</span><span class="p">,</span> <span class="n">data_type</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">S_D_vec_k</span>
+
+
+<span class="k">def</span> <span class="nf">_minipatch_generator</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">max_k</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">random_state</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Generate random minipatches with n observations and m nodes.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    N : int</span>
+<span class="sd">        The total number of observations in the full data.</span>
+
+<span class="sd">    M : int</span>
+<span class="sd">        The total number of features/nodes in the full data.</span>
+
+<span class="sd">    max_k : int</span>
+<span class="sd">        The total number of minipatches to generate.</span>
+
+<span class="sd">    n : int</span>
+<span class="sd">        The number of observations to sample into a minipatch.</span>
+
+<span class="sd">    m : int</span>
+<span class="sd">        The number of nodes to sample into a minipatch.</span>
+
+<span class="sd">    random_state : int</span>
+<span class="sd">        Controls both the randomness of sampling observations and sampling features into minipatches.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="n">random_state</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_k</span><span class="p">):</span>
+
+        <span class="n">minipatch_idx_Ik</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>  <span class="c1"># uniform sampling of subset of observations</span>
+
+        <span class="n">minipatch_idx_Fk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">m</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>  <span class="c1"># uniform sampling of subset of nodes</span>
+
+        <span class="n">minipatch_idx_Ik_Fk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">minipatch_idx_Ik</span><span class="p">,</span> <span class="n">minipatch_idx_Fk</span><span class="p">)</span>
+
+        <span class="k">yield</span> <span class="n">minipatch_idx_Ik_Fk</span>
+
+
+<span class="k">def</span> <span class="nf">_post_processing_S_ind</span><span class="p">(</span><span class="n">S_D_vec</span><span class="p">,</span> <span class="n">m</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extract the node pair indices with an estimated edge from the result on one minipatch.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="n">S_D_vec</span><span class="p">[:,</span> <span class="n">m</span><span class="p">:]</span>
+
+
+<span class="k">def</span> <span class="nf">_post_processing_D_ind</span><span class="p">(</span><span class="n">S_D_vec</span><span class="p">,</span> <span class="n">m</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate indices of all the node pairs sampled into one minipatch.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">combinations</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">S_D_vec</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:</span><span class="n">m</span><span class="p">]),</span> <span class="mi">2</span><span class="p">)))</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">_build_graph</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">M</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate the sparse matrix representing the adjacency matrix of the final estimated graph structure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">support_ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">combinations</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">M</span><span class="p">)),</span> <span class="mi">2</span><span class="p">)))[</span><span class="n">mask</span><span class="p">,</span> <span class="p">:]</span>
+
+    <span class="n">support_</span> <span class="o">=</span> <span class="n">coo_matrix</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">support_ind</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">),</span> <span class="p">(</span><span class="n">support_ind</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">support_ind</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])),</span>
+                          <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">M</span><span class="p">))</span>
+
+    <span class="n">support_</span> <span class="o">+=</span> <span class="n">support_</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">support_</span>
+
+
+<div class="viewcode-block" id="MPGraph"><a class="viewcode-back" href="../../../generated/mplearn.graphical_model.MPGraph.html#mplearn.graphical_model.MPGraph">[docs]</a><span class="k">class</span> <span class="nc">MPGraph</span><span class="p">(</span><span class="n">BaseLearner</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Gaussian graphical model selection with Minipatch Graph.</span>
+
+<span class="sd">    Gaussian graphical model selection refers to the problem of inferring the</span>
+<span class="sd">    edge set (or sparsity patterns of the precision matrix) from obersved data.</span>
+<span class="sd">    This is a meta-algorithm that repeatedly fits base graph selectors to many</span>
+<span class="sd">    random subsets of both observations and features (minipatches) in parallel</span>
+<span class="sd">    and ensembles the selection events from all these base selectors. At the end</span>
+<span class="sd">    of the algorithm, the final edge selection frequency is computed for each</span>
+<span class="sd">    pair of nodes (i, j) as the number of times (i, j) are sampled together and</span>
+<span class="sd">    the base graph selector puts an edge between them divided by the number of times</span>
+<span class="sd">    (i, j) are sampled together into minipatches. The algorithm eventually selects</span>
+<span class="sd">    the set of edges whose selection frequency is above a certain threshold.</span>
+
+<span class="sd">    Important note: `MPGraph` assumes that all necessary pre-processing steps</span>
+<span class="sd">    prior to Gaussian graphical model selection have already been carried out</span>
+<span class="sd">    on the input data X. For instance, data standardization (centering and/or scaling)</span>
+<span class="sd">    needs to be performed on the raw data prior to calling `fit()` if such</span>
+<span class="sd">    data pre-processing is deemed necessary by the users.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    base_graph : ``estimator`` instance</span>
+<span class="sd">        A Gaussian graphical model selector with a ``fit`` method that provides</span>
+<span class="sd">        an estimate of either the precision matrix or its sparsity pattern.</span>
+<span class="sd">        See **Notes** for more details.</span>
+
+<span class="sd">    minipatch_m_ratio : float, default=0.05</span>
+<span class="sd">        The fraction of features/nodes to draw from X to train each base graph selector.</span>
+<span class="sd">        Specifically, `round(minipatch_m_ratio * X.shape[1])` nodes are drawn</span>
+<span class="sd">        into each minipatch. Thus, `minipatch_m_ratio` should be in the</span>
+<span class="sd">        interval (0.0, 1.0]. See **Notes** for more details.</span>
+
+<span class="sd">    minipatch_n_ratio : float, default=0.5</span>
+<span class="sd">        The fraction of observations to draw from X to train each base graph selector.</span>
+<span class="sd">        Specifically, `round(minipatch_n_ratio * X.shape[0])` observations are drawn</span>
+<span class="sd">        into each minipatch. Thus, `minipatch_n_ratio` should be in the</span>
+<span class="sd">        interval (0.0, 1.0]. See **Notes** for more details.</span>
+
+<span class="sd">    max_k : int, default=None.</span>
+<span class="sd">        The total number of minipatches to use for training the meta-algorithm.</span>
+<span class="sd">        If set to `None`, the algorithm will automatically compute `max_k` to</span>
+<span class="sd">        be `ceil(1 / minipatch_m_ratio) * 50`.</span>
+
+<span class="sd">    assume_centered : bool, default=True.</span>
+<span class="sd">        If False, each column of X is centered to have a mean of zero.</span>
+
+<span class="sd">    ray_configure : dict, default=None.</span>
+<span class="sd">        Dictionary with parameter names (`str`) as keys and specific parameter</span>
+<span class="sd">        settings as values. This specifies the parameter values for the Ray framework,</span>
+<span class="sd">        which is used to parallelize computation over minipatches.</span>
+<span class="sd">        Unless set to `None`, `ray_configure` is required to have at least one of two</span>
+<span class="sd">        keys: `&#39;memory&#39;` and `&#39;object_store_memory&#39;`. If set to `None`, Ray would</span>
+<span class="sd">        automatically detect the available memory resources on the system. See the documentation</span>
+<span class="sd">        of Ray for more details. See **Notes** for further discussion.</span>
+
+<span class="sd">        - `&#39;memory&#39;` : int. This specifies the amount of reservable memory resource (in Gigabytes) to create.</span>
+<span class="sd">        - `&#39;object_store_memory&#39;` : int. The amount of memory (in Gigabytes) to start the object store with.</span>
+
+<span class="sd">    n_jobs : int, default=-1.</span>
+<span class="sd">        The number of jobs to run in parallel. `-1` means using all processors.</span>
+
+<span class="sd">    parallel_batch_size : int, default=200.</span>
+<span class="sd">        The number of tasks to dispatch at once to each worker. It is recommended</span>
+<span class="sd">        to leave this at the default value. See documentation of `joblib.Parallel`</span>
+<span class="sd">        for more details. See **Notes** for further discussion.</span>
+
+<span class="sd">    parallel_post_processing : bool, default=False.</span>
+<span class="sd">        Whether to use parallelization for aggregating the selection events from all minipatches.</span>
+<span class="sd">        Using parallelization for this task can reduce the overall runtime, but might consume</span>
+<span class="sd">        more memory.</span>
+
+<span class="sd">    low_memory_mode : bool, default=False.</span>
+<span class="sd">        Whether to clear some non-essential intermediate variables to save memory.</span>
+
+<span class="sd">    random_state : int, default=0.</span>
+<span class="sd">        Controls both the randomness of sampling observations and sampling features into minipatches.</span>
+
+<span class="sd">    verbose : int, default=0.</span>
+<span class="sd">        Controls the verbosity: the higher, more messages are displayed.</span>
+
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    N_ : int</span>
+<span class="sd">        The number of observations in the input data.</span>
+
+<span class="sd">    M_ : int</span>
+<span class="sd">        The number of features/nodes in the input data.</span>
+
+<span class="sd">    Pi_hat_ : ndarray of shape (M*(M-1)/2, )</span>
+<span class="sd">        The final edge selection frequency between each pair of nodes (i, j), where :math:`0\leq i &lt; j \leq M-1`.</span>
+<span class="sd">        Specifically, `Pi_hat_[0]` represents the selection frequency of the edge between the node pair (0, 1),</span>
+<span class="sd">        `Pi_hat_[1]` represents the selection frequency of the edge between the node pair (0, 2), so on and so forth.</span>
+<span class="sd">        Each element is in the interval [0.0, 1.0]. A larger value indicates that the corresponding</span>
+<span class="sd">        edge is more stable.</span>
+
+<span class="sd">    S_val_vec_ : ndarray of shape (M*(M-1)/2, )</span>
+<span class="sd">        The total number of times each node pair (i, j) is sampled together into minipatches and</span>
+<span class="sd">        there is an estimated edge between them as determined by the base graph selectors.</span>
+<span class="sd">        The indexing of `S_val_vec_` is the same as `Pi_hat_`.</span>
+<span class="sd">        If `low_memory_mode=True`, this would be set to `None`.</span>
+
+<span class="sd">    D_val_vec_ : ndarray of shape (M*(M-1)/2, )</span>
+<span class="sd">        The total number of times each node pair (i, j) is sampled together into minipatches.</span>
+<span class="sd">        The indexing of `D_val_vec_` is the same as `Pi_hat_`.</span>
+<span class="sd">        If `low_memory_mode=True`, this would be set to `None`.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    - More details about ``base_graph``: The MPGraph meta-algorithm can be employed with</span>
+<span class="sd">      a wide variety of thresholded Gaussian graphical model selection techniques</span>
+<span class="sd">      as the base selector on minipatches.</span>
+<span class="sd">      This package current provides a highly effective base selector classes -</span>
+<span class="sd">      `minipatch_graphical_model.base_graph.ThresholdedGraphicalLasso`.</span>
+<span class="sd">      However, user-supplied selector is also allowed as long as the selector class follows the</span>
+<span class="sd">      same structure as the base graph selector mentioned above (i.e. has a ``fit`` method that</span>
+<span class="sd">      provides an estimate of either the precision matrix or its sparsity patterns).</span>
+<span class="sd">    - More details about choice of minipatch size: Suppose the data X has N observations (rows)</span>
+<span class="sd">      and M nodes (columns). Following the notations of [1], a minipatch is obtained by</span>
+<span class="sd">      subsampling n observations and m features simultaneously without replacement from X</span>
+<span class="sd">      using some form of randomization. The parameter `minipatch_m_ratio` represents :math:`m/M`</span>
+<span class="sd">      and `minipatch_n_ratio` represents :math:`n/N`. As demonstrated in [1], the performance</span>
+<span class="sd">      of the meta-algorithm is robust for a sensible range of n and m values. The general rule</span>
+<span class="sd">      of thumb is to take m to be 5% to 10% of M and then pick n relative to</span>
+<span class="sd">      m such that it well exceeds the sample complexity of the base graph selector used.</span>
+<span class="sd">    - More details about the parallelization framework: this software uses the Ray framework</span>
+<span class="sd">      for parallelization. Specifically, ``ray_configure``, ``n_jobs``, and ``parallel_batch_size``</span>
+<span class="sd">      together controls the behavior of the parallel backend. It is generally okay to leave these</span>
+<span class="sd">      at default values. However, by the nature of parallelization framework, the computational speed</span>
+<span class="sd">      can vary across systems with different hardware resources. For the most optimal performance,</span>
+<span class="sd">      it is sometimes helpful to change these parameter values accordingly based on the available computing</span>
+<span class="sd">      resources of your specific computer system.</span>
+<span class="sd">    - We refer the users to the original paper [1] for the detailed algorithm.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [1] Yao, T. and Wang, M. and Allen, G. I., &quot;Gaussian Graphical Model Selection for Huge Data</span>
+<span class="sd">           via Minipatch Learning&quot;, arXiv:2110.12067.</span>
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    The following example shows how to infer the structure of the</span>
+<span class="sd">    Gaussian graphical model (sparsity pattern of the precision matrix) from observed data.</span>
+<span class="sd">    &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">    &gt;&gt;&gt; from mplearn.graphical_model.base_graph import ThresholdedGraphicalLasso</span>
+<span class="sd">    &gt;&gt;&gt; from mplearn.graphical_model import MPGraph</span>
+<span class="sd">    &gt;&gt;&gt; N, M = 1000, 500</span>
+<span class="sd">    &gt;&gt;&gt; precision = 1.25*np.identity(M) + np.diag(0.5 * np.ones(M - 1), 1) + np.diag(0.5 * np.ones(M - 1), -1)</span>
+<span class="sd">    &gt;&gt;&gt; X = np.random.RandomState(0).multivariate_normal(np.zeros(M), np.linalg.inv(precision), size=N)</span>
+<span class="sd">    &gt;&gt;&gt; base_graph = ThresholdedGraphicalLasso()</span>
+<span class="sd">    &gt;&gt;&gt; mpgraph = MPGraph(base_graph=base_graph,</span>
+<span class="sd">    ...                   minipatch_m_ratio=(50. / M),</span>
+<span class="sd">    ...                   minipatch_n_ratio=(60. / N),</span>
+<span class="sd">    ...                   max_k=1000,</span>
+<span class="sd">    ...                   parallel_post_processing=True,</span>
+<span class="sd">    ...                   verbose=0)</span>
+<span class="sd">    &gt;&gt;&gt; fitted_mpgraph = mpgraph.fit(X)</span>
+<span class="sd">    &gt;&gt;&gt; estimated_graph = fitted_mpgraph.get_support(support_type=&quot;sparse_matrix&quot;, pi_thr=0.5)  # doctest: +SKIP</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">base_graph</span><span class="p">,</span>
+                 <span class="o">*</span><span class="p">,</span>
+                 <span class="n">minipatch_m_ratio</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
+                 <span class="n">minipatch_n_ratio</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+                 <span class="n">max_k</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">assume_centered</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">ray_configure</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">n_jobs</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+                 <span class="n">parallel_batch_size</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+                 <span class="n">parallel_post_processing</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">low_memory_mode</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                 <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">base_graph</span> <span class="o">=</span> <span class="n">base_graph</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">minipatch_m_ratio</span> <span class="o">=</span> <span class="n">minipatch_m_ratio</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">minipatch_n_ratio</span> <span class="o">=</span> <span class="n">minipatch_n_ratio</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_k</span> <span class="o">=</span> <span class="n">max_k</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assume_centered</span> <span class="o">=</span> <span class="n">assume_centered</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ray_configure</span> <span class="o">=</span> <span class="n">ray_configure</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span> <span class="o">=</span> <span class="n">n_jobs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parallel_batch_size</span> <span class="o">=</span> <span class="n">parallel_batch_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parallel_post_processing</span> <span class="o">=</span> <span class="n">parallel_post_processing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">low_memory_mode</span> <span class="o">=</span> <span class="n">low_memory_mode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">random_state</span> <span class="o">=</span> <span class="n">random_state</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+
+<div class="viewcode-block" id="MPGraph.fit"><a class="viewcode-back" href="../../../generated/mplearn.graphical_model.MPGraph.html#mplearn.graphical_model.MPGraph.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Fit the MPGraph model to X.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X : ndarray of shape (n_samples, n_features)</span>
+<span class="sd">            Data from which to infer the graphical model structure. Note that data frame or sparse matrix format</span>
+<span class="sd">            are not allowed. Also, the dtype of X has to be numeric (e.g. float, int). NaN/Inf are not</span>
+<span class="sd">            allowed in the input. </span>
+<span class="sd">        y : Ignored.</span>
+<span class="sd">            Not used, present for API consistency.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        self : object</span>
+<span class="sd">            Fitted estimator.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">GB</span> <span class="o">=</span> <span class="mi">1000</span> <span class="o">*</span> <span class="mf">1e6</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ray</span><span class="o">.</span><span class="n">is_initialized</span><span class="p">():</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ray_configure</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+
+                <span class="n">ray</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">include_dashboard</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">(</span><span class="s2">&quot;memory&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ray_configure</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="s2">&quot;object_store_memory&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ray_configure</span><span class="p">):</span>
+
+                    <span class="n">ray</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">_memory</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ray_configure</span><span class="p">[</span><span class="s2">&quot;memory&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">GB</span><span class="p">,</span> <span class="n">include_dashboard</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="p">(</span><span class="s2">&quot;memory&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ray_configure</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="s2">&quot;object_store_memory&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ray_configure</span><span class="p">):</span>
+
+                    <span class="n">ray</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">object_store_memory</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ray_configure</span><span class="p">[</span><span class="s2">&quot;object_store_memory&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">GB</span><span class="p">,</span>
+                             <span class="n">include_dashboard</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="p">(</span><span class="s2">&quot;memory&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ray_configure</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="s2">&quot;object_store_memory&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ray_configure</span><span class="p">):</span>
+
+                    <span class="n">ray</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">_memory</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ray_configure</span><span class="p">[</span><span class="s2">&quot;memory&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">GB</span><span class="p">,</span>
+                             <span class="n">object_store_memory</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ray_configure</span><span class="p">[</span><span class="s2">&quot;object_store_memory&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">GB</span><span class="p">,</span>
+                             <span class="n">include_dashboard</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">error_msg</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="s2">&quot;ray_configure must either be None&quot;</span>
+                        <span class="s2">&quot;or a dictionary containing at least one of the key: &#39;memory&#39; and &#39;object_store_memory.&quot;</span>
+                    <span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
+
+        <span class="n">register_ray</span><span class="p">()</span>
+
+        <span class="n">X</span> <span class="o">=</span> <span class="n">check_array</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">ensure_min_features</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">force_all_finite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">estimator</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="c1"># make sure the input data is a ndarray</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">as_float_array</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">force_all_finite</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">assume_centered</span><span class="p">:</span>
+            <span class="n">X</span> <span class="o">=</span> <span class="n">scale</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">with_mean</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">with_std</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="c1"># Dimensions of data matrix</span>
+        <span class="n">N</span><span class="p">,</span> <span class="n">M</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="n">n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">minipatch_n_ratio</span> <span class="o">*</span> <span class="n">N</span><span class="p">))</span>  <span class="c1"># number of observations in a minipatch</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">minipatch_m_ratio</span> <span class="o">*</span> <span class="n">M</span><span class="p">))</span>  <span class="c1"># number of nodes in a minipatch</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_k</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">max_k</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">M</span> <span class="o">/</span> <span class="n">m</span><span class="p">)</span> <span class="o">*</span> <span class="mi">50</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">M</span> <span class="o">&lt;=</span> <span class="mi">65000</span><span class="p">:</span>
+            <span class="n">data_type</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">data_type</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">)</span>
+
+        <span class="c1"># call the generator function to sample minipatches</span>
+        <span class="n">random_minipatches</span> <span class="o">=</span> <span class="n">_minipatch_generator</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_k</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)</span>
+
+        <span class="n">base_graph</span> <span class="o">=</span> <span class="n">clone</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base_graph</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">joblib</span><span class="o">.</span><span class="n">parallel_backend</span><span class="p">(</span><span class="s2">&quot;ray&quot;</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span><span class="p">):</span>
+            <span class="c1"># fit base graph selectors to all random minipatches in parallel</span>
+            <span class="n">S_D_vec_over_minipatches</span> <span class="o">=</span> <span class="n">Parallel</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parallel_batch_size</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">)(</span>
+                <span class="n">delayed</span><span class="p">(</span><span class="n">_graph_selection_single_fit</span><span class="p">)(</span><span class="n">clone</span><span class="p">(</span><span class="n">base_graph</span><span class="p">),</span>
+                                                     <span class="n">X</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">minipatch_idx_Ik_Fk</span><span class="p">[:</span><span class="n">n</span><span class="p">]),</span> <span class="nb">list</span><span class="p">(</span><span class="n">minipatch_idx_Ik_Fk</span><span class="p">[</span><span class="n">n</span><span class="p">:]))],</span>
+                                                     <span class="n">minipatch_idx_Ik_Fk</span><span class="p">[</span><span class="n">n</span><span class="p">:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span>
+                                                     <span class="n">data_type</span><span class="p">)</span> <span class="k">for</span> <span class="n">minipatch_idx_Ik_Fk</span> <span class="ow">in</span> <span class="n">random_minipatches</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=== Training over %.i minipatches has finished. Starting post-processing ===&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_k</span><span class="p">)</span>
+        <span class="c1"># post-processing: aggregate results of selection events from all minipatches</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">parallel_post_processing</span><span class="p">:</span>
+            <span class="c1"># conduct post-processing in serial mode</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">S_D_vec_over_minipatches</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="c1"># get the (i, j) that is sampled and selected in the kth minipatch (i is guaranteed to be smaller than j)</span>
+                    <span class="n">S_ind</span> <span class="o">=</span> <span class="n">S_D_vec_over_minipatches</span><span class="p">[</span><span class="n">k</span><span class="p">][:,</span> <span class="n">m</span><span class="p">:]</span>
+                    <span class="c1"># get the (i, j) that is sampled in the kth minipatch (i is guaranteed to be smaller than j)</span>
+                    <span class="n">D_ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">combinations</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">S_D_vec_over_minipatches</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">1</span><span class="p">,</span> <span class="p">:</span><span class="n">m</span><span class="p">]),</span> <span class="mi">2</span><span class="p">)))</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">S_ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">S_ind</span><span class="p">,</span> <span class="n">S_D_vec_over_minipatches</span><span class="p">[</span><span class="n">k</span><span class="p">][:,</span> <span class="n">m</span><span class="p">:]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="n">D_ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">D_ind</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">combinations</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">S_D_vec_over_minipatches</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">1</span><span class="p">,</span> <span class="p">:</span><span class="n">m</span><span class="p">]),</span> <span class="mi">2</span><span class="p">)))</span><span class="o">.</span><span class="n">transpose</span><span class="p">()),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># conduct post-processing in parallel mode</span>
+            <span class="k">with</span> <span class="n">joblib</span><span class="o">.</span><span class="n">parallel_backend</span><span class="p">(</span><span class="s2">&quot;ray&quot;</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span><span class="p">):</span>
+                <span class="n">S_ind_list</span> <span class="o">=</span> <span class="n">Parallel</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parallel_batch_size</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">)(</span>
+                    <span class="n">delayed</span><span class="p">(</span><span class="n">_post_processing_S_ind</span><span class="p">)(</span><span class="n">S_D_vec</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span> <span class="k">for</span> <span class="n">S_D_vec</span> <span class="ow">in</span> <span class="n">S_D_vec_over_minipatches</span><span class="p">)</span>
+                <span class="n">D_ind_list</span> <span class="o">=</span> <span class="n">Parallel</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parallel_batch_size</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">)(</span>
+                    <span class="n">delayed</span><span class="p">(</span><span class="n">_post_processing_D_ind</span><span class="p">)(</span><span class="n">S_D_vec</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span> <span class="k">for</span> <span class="n">S_D_vec</span> <span class="ow">in</span> <span class="n">S_D_vec_over_minipatches</span><span class="p">)</span>
+
+            <span class="n">S_ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">S_ind_list</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="n">D_ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">D_ind_list</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># compute the total number of times each node pair (i, j) is sampled together into minipatches and</span>
+        <span class="c1"># there is an estimated edge between them as determined by the base graph selectors.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">S_val_vec_</span> <span class="o">=</span> <span class="n">coo_matrix</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">S_ind</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">),</span> <span class="p">(</span><span class="n">S_ind</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:],</span> <span class="n">S_ind</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:])),</span>
+                                     <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">M</span><span class="p">))</span><span class="o">.</span><span class="n">todok</span><span class="p">()[</span><span class="n">np</span><span class="o">.</span><span class="n">triu_indices</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)]</span><span class="o">.</span><span class="n">toarray</span><span class="p">()</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+        <span class="c1"># compute the total number of times each node pair (i, j) is sampled together into minipatches.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">D_val_vec_</span> <span class="o">=</span> <span class="n">coo_matrix</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">D_ind</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">),</span> <span class="p">(</span><span class="n">D_ind</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:],</span> <span class="n">D_ind</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:])),</span>
+                                     <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">M</span><span class="p">))</span><span class="o">.</span><span class="n">todok</span><span class="p">()[</span><span class="n">np</span><span class="o">.</span><span class="n">triu_indices</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)]</span><span class="o">.</span><span class="n">toarray</span><span class="p">()</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=== Post-processing has finished ===&quot;</span><span class="p">)</span>
+
+        <span class="n">S_D_vec_over_minipatches</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">S_ind</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">D_ind</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parallel_post_processing</span><span class="p">:</span>
+            <span class="n">S_ind_list</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">D_ind_list</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># compute the final edge selection frequency between each pair of nodes (i, j), for 0 &lt;= i &lt; j &lt;= M-1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Pi_hat_</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">S_val_vec_</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">D_val_vec_</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">N_</span> <span class="o">=</span> <span class="n">N</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">M_</span> <span class="o">=</span> <span class="n">M</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">low_memory_mode</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">S_val_vec_</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">D_val_vec_</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">ray</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+<div class="viewcode-block" id="MPGraph.get_support"><a class="viewcode-back" href="../../../generated/mplearn.graphical_model.MPGraph.html#mplearn.graphical_model.MPGraph.get_support">[docs]</a>    <span class="k">def</span> <span class="nf">get_support</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">support_type</span><span class="o">=</span><span class="s1">&#39;mask&#39;</span><span class="p">,</span> <span class="n">pi_thr</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a mask, indicator, matrix, or node pair index, of the edges selected by the meta-algorithm.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        support_type : {&#39;mask&#39;, &#39;indicator&#39;, &#39;sparse_matrix&#39;, &#39;node_pair&#39;}, default=&#39;mask&#39;</span>
+<span class="sd">            Specify the format in which the estimated graph structure is returned.</span>
+
+<span class="sd">        pi_thr : float, default=0.5</span>
+<span class="sd">            The selection frequency threshold above which an edge is considered selected.</span>
+<span class="sd">            A larger threshold indicates a more stringent criterion.</span>
+<span class="sd">            For many problems, setting this threshold to 0.5 is a reasonable choice.</span>
+<span class="sd">            Note that this threshold must be within (0.0, 1.0).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        support : ndarray or coo_matrix</span>
+
+<span class="sd">            - If `support_type=&#39;mask&#39;`, then a boolean array of shape (M*(M-1)/2, ) indicating</span>
+<span class="sd">              presence of edges between each pair of nodes (i, j), where :math:`0\leq i &lt; j \leq M-1`.</span>
+<span class="sd">              Specifically, `support[0]=True` iff there is an edge between the node pair (0, 1),</span>
+<span class="sd">              `support[1]=True` iff there is an edge between the node pair (0, 2), so on and so forth.</span>
+<span class="sd">            - If `support_type=&#39;indicator&#39;`, then a binary array of shape (M*(M-1)/2, ) indicating</span>
+<span class="sd">              presence of edges between each pair of nodes (i, j), :math:`0\leq i &lt; j\leq M-1`.</span>
+<span class="sd">              Specifically, `support[0]=1` if there is an edge between the node pair (0, 1) and</span>
+<span class="sd">              `support[0]=0` otherwise. The indexing is the same as &#39;mask&#39;.</span>
+<span class="sd">            - If `support_type=&#39;sparse_matrix&#39;`, then a sparse matrix in COO format (coo_matrix)</span>
+<span class="sd">              of shape (M, M) representing the adjacency matrix of the estimated graph structure.</span>
+<span class="sd">              The nonzero entries of this sparse matrix indicate presence of edges. Note that one</span>
+<span class="sd">              may convert the adjacency matrix to a dense array by using `support.toarray()`. However,</span>
+<span class="sd">              converting to dense array can consume a large amount of memory for large M, so it</span>
+<span class="sd">              is usually desirable to keep this in sparse matrix format.</span>
+<span class="sd">            - If `support_type=&#39;node_pair&#39;`, then a ndarray of shape (# selected edges, 2) representing</span>
+<span class="sd">              node pairs (i, j) between which there is an estimated edge, :math:`0\leq i &lt; j\leq M-1`.</span>
+<span class="sd">              Specifically, each row is a node pair with an estimated edge.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">check_is_fitted</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">error_msg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;pi_thr must be a float in (0.0, 1.0).&quot;</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">pi_thr</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">pi_thr</span> <span class="o">&gt;</span> <span class="mf">1.0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
+
+        <span class="n">support_</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Pi_hat_</span> <span class="o">&gt;=</span> <span class="n">pi_thr</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">support_type</span> <span class="o">==</span> <span class="s1">&#39;mask&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">support_</span>
+        <span class="k">elif</span> <span class="n">support_type</span> <span class="o">==</span> <span class="s1">&#39;indicator&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">support_</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">support_type</span> <span class="o">==</span> <span class="s1">&#39;sparse_matrix&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_build_graph</span><span class="p">(</span><span class="n">support_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">M_</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">support_type</span> <span class="o">==</span> <span class="s1">&#39;node_pair&#39;</span><span class="p">:</span>
+            <span class="n">support_node_pair</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">combinations</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">M_</span><span class="p">)),</span> <span class="mi">2</span><span class="p">)))[</span><span class="n">support_</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="k">return</span> <span class="n">support_node_pair</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;support_type must be one of {&#39;mask&#39;, &#39;indicator&#39;, &#39;sparse_matrix&#39;, &#39;node_pair&#39;}&quot;</span><span class="p">)</span></div></div>
+
+
+
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Tianyi Yao.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

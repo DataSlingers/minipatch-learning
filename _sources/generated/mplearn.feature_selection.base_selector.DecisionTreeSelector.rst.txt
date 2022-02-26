@@ -1,0 +1,12 @@
+:mod:`mplearn.feature_selection.base_selector`.DecisionTreeSelector
+==========================================================================
+
+.. currentmodule:: mplearn.feature_selection.base_selector
+
+.. autoclass:: DecisionTreeSelector
+
+.. include:: mplearn.feature_selection.base_selector.DecisionTreeSelector.examples
+
+.. raw:: html
+
+    <div class="clearer"></div>

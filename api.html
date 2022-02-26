@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Reference &mdash; minipatch-learning 0.1 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> minipatch-learning
+          </a>
+              <div class="version">
+                0.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">API Reference</a><ul>
+<li><a class="reference internal" href="#module-mplearn.feature_selection">Feature Selection</a><ul>
+<li><a class="reference internal" href="#minipatch-feature-selection">Minipatch feature selection</a></li>
+<li><a class="reference internal" href="#base-feature-selector">Base feature selector</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-mplearn.graphical_model">Gaussian Graphical Model Selection</a><ul>
+<li><a class="reference internal" href="#minipatch-graph-selection">Minipatch graph selection</a></li>
+<li><a class="reference internal" href="#base-graph-selector">Base graph selector</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">minipatch-learning</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>API Reference</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/api.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="api-reference">
+<h1>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this headline"></a></h1>
+<p>This page contains detailed API references for the minipatch-learning package.</p>
+<div class="section" id="module-mplearn.feature_selection">
+<span id="feature-selection"></span><h2>Feature Selection<a class="headerlink" href="#module-mplearn.feature_selection" title="Permalink to this headline"></a></h2>
+<p>Here is the API documentation of the minipatch feature selection part of the package.</p>
+<div class="section" id="minipatch-feature-selection">
+<h3>Minipatch feature selection<a class="headerlink" href="#minipatch-feature-selection" title="Permalink to this headline"></a></h3>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/mplearn.feature_selection.AdaSTAMPS.html#mplearn.feature_selection.AdaSTAMPS" title="mplearn.feature_selection.AdaSTAMPS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">feature_selection.AdaSTAMPS</span></code></a>(base_selector, *)</p></td>
+<td><p>Feature selection with Adaptive Stable Minipatch Selection.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="base-feature-selector">
+<h3>Base feature selector<a class="headerlink" href="#base-feature-selector" title="Permalink to this headline"></a></h3>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/mplearn.feature_selection.base_selector.ThresholdedOLS.html#mplearn.feature_selection.base_selector.ThresholdedOLS" title="mplearn.feature_selection.base_selector.ThresholdedOLS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">feature_selection.base_selector.ThresholdedOLS</span></code></a>(*)</p></td>
+<td><p>Feature selection with the Thresholded OLS selector.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/mplearn.feature_selection.base_selector.DecisionTreeSelector.html#mplearn.feature_selection.base_selector.DecisionTreeSelector" title="mplearn.feature_selection.base_selector.DecisionTreeSelector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">feature_selection.base_selector.DecisionTreeSelector</span></code></a>(*)</p></td>
+<td><p>Feature selection with the decision tree selector.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="section" id="module-mplearn.graphical_model">
+<span id="gaussian-graphical-model-selection"></span><h2>Gaussian Graphical Model Selection<a class="headerlink" href="#module-mplearn.graphical_model" title="Permalink to this headline"></a></h2>
+<p>Here is the API documentation of the minipatch graphical model part of the package.</p>
+<div class="section" id="minipatch-graph-selection">
+<h3>Minipatch graph selection<a class="headerlink" href="#minipatch-graph-selection" title="Permalink to this headline"></a></h3>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/mplearn.graphical_model.MPGraph.html#mplearn.graphical_model.MPGraph" title="mplearn.graphical_model.MPGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">graphical_model.MPGraph</span></code></a>(base_graph, *[, …])</p></td>
+<td><p>Gaussian graphical model selection with Minipatch Graph.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="base-graph-selector">
+<h3>Base graph selector<a class="headerlink" href="#base-graph-selector" title="Permalink to this headline"></a></h3>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/mplearn.graphical_model.base_graph.ThresholdedGraphicalLasso.html#mplearn.graphical_model.base_graph.ThresholdedGraphicalLasso" title="mplearn.graphical_model.base_graph.ThresholdedGraphicalLasso"><code class="xref py py-obj docutils literal notranslate"><span class="pre">graphical_model.base_graph.ThresholdedGraphicalLasso</span></code></a>(*)</p></td>
+<td><p>Gaussian graphical model selection with the Thresholded Graphical Lasso estimator.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Tianyi Yao.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

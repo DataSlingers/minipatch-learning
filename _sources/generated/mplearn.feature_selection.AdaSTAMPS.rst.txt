@@ -1,0 +1,12 @@
+:mod:`mplearn.feature_selection`.AdaSTAMPS
+=================================================
+
+.. currentmodule:: mplearn.feature_selection
+
+.. autoclass:: AdaSTAMPS
+
+.. include:: mplearn.feature_selection.AdaSTAMPS.examples
+
+.. raw:: html
+
+    <div class="clearer"></div>

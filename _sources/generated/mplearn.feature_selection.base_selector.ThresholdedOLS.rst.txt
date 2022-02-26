@@ -1,0 +1,12 @@
+:mod:`mplearn.feature_selection.base_selector`.ThresholdedOLS
+====================================================================
+
+.. currentmodule:: mplearn.feature_selection.base_selector
+
+.. autoclass:: ThresholdedOLS
+
+.. include:: mplearn.feature_selection.base_selector.ThresholdedOLS.examples
+
+.. raw:: html
+
+    <div class="clearer"></div>

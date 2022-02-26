@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mplearn.feature_selection._adaptive_stable_minipatch_selection &mdash; minipatch-learning 0.1 documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> minipatch-learning
+          </a>
+              <div class="version">
+                0.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">minipatch-learning</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      <li>mplearn.feature_selection._adaptive_stable_minipatch_selection</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for mplearn.feature_selection._adaptive_stable_minipatch_selection</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numbers</span>
+<span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">sklearn.utils.validation</span> <span class="kn">import</span> <span class="n">check_is_fitted</span>
+<span class="kn">from</span> <span class="nn">sklearn.base</span> <span class="kn">import</span> <span class="n">clone</span>
+<span class="kn">from</span> <span class="nn">sklearn.utils</span> <span class="kn">import</span> <span class="n">safe_mask</span>
+
+<span class="kn">from</span> <span class="nn">..common</span> <span class="kn">import</span> <span class="n">BaseLearner</span>
+<span class="kn">from</span> <span class="nn">.utils_feature_selection</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">manual_sort</span><span class="p">,</span>
+    <span class="n">kde_based_pi_thr</span><span class="p">,</span>
+    <span class="n">visualize_selection_frequency_versus_iteration</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_adaptive_feature_sampling_exploitation_exploration</span><span class="p">(</span><span class="n">sampling_options</span><span class="p">,</span>
+                                                        <span class="n">rng</span><span class="p">,</span>
+                                                        <span class="n">gamma</span><span class="p">,</span>
+                                                        <span class="n">m</span><span class="p">,</span>
+                                                        <span class="n">M</span><span class="p">,</span>
+                                                        <span class="n">G</span><span class="p">,</span>
+                                                        <span class="n">keep_all_iters</span><span class="p">,</span>
+                                                        <span class="n">max_iters_to_keep</span><span class="p">,</span>
+                                                        <span class="n">Pi_hat_seq</span><span class="p">,</span>
+                                                        <span class="n">prev_partition</span><span class="p">,</span>
+                                                        <span class="n">k</span><span class="p">,</span>
+                                                        <span class="n">verbose</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Exploitation &amp; Exploration adaptive feature sampling procedure.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sampling_options : dict</span>
+<span class="sd">        Dictionary with parameter names (`str`) as keys and specific parameter</span>
+<span class="sd">        settings as values. See the documentation of `AdaSTAMPS` for details.</span>
+
+<span class="sd">    rng : RandomState instance</span>
+<span class="sd">        Make sure the sampling uses the same RandomState instance for all iterations.</span>
+
+<span class="sd">    gamma : float</span>
+<span class="sd">        Controls the proportion of features sampled from the active set.</span>
+
+<span class="sd">    m : int</span>
+<span class="sd">        The number of features in a minipatch.</span>
+
+<span class="sd">    M : int</span>
+<span class="sd">        The total number of input features.</span>
+
+<span class="sd">    G : int</span>
+<span class="sd">        Number of iterations for each burn-in epoch.</span>
+
+<span class="sd">    keep_all_iters : bool</span>
+<span class="sd">        See the documentation of `AdaSTAMPS` for details.</span>
+
+<span class="sd">    max_iters_to_keep : int</span>
+<span class="sd">        See the documentation of `AdaSTAMPS` for details.</span>
+
+<span class="sd">    Pi_hat_seq : array of shape (n_features, num_iterations)</span>
+<span class="sd">        Contains the selection frequency of features over previous iterations.</span>
+
+<span class="sd">    prev_partition : list of arrays</span>
+<span class="sd">        Each element contains the indices of features that are sampled into a minipatch.</span>
+
+<span class="sd">    k : int</span>
+<span class="sd">        The current iteration number.</span>
+
+<span class="sd">    verbose : {0, 1, 2}</span>
+<span class="sd">        Controls the verbosity.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Fk : array of shape (m, )</span>
+<span class="sd">        Contains the integer indices of the features from X that are in the current minipatch.</span>
+
+<span class="sd">    rng : RandomState instance</span>
+
+<span class="sd">    gamma : float</span>
+<span class="sd">        The gamma value from the current iteration.</span>
+
+<span class="sd">    feature_set_partition : list of arrays</span>
+<span class="sd">        This is only returned during the burn-in stage.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Specify options for the sampling procedure</span>
+    <span class="n">gamma_max</span> <span class="o">=</span> <span class="n">sampling_options</span><span class="p">[</span><span class="s2">&quot;gamma_max&quot;</span><span class="p">]</span>  <span class="c1"># usually default to 1</span>
+
+    <span class="c1"># Initialize array to store index for all M features</span>
+    <span class="n">full_feature_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+
+    <span class="c1"># Subsample features using Adaptive Feature Sampling Exploitation and Exploration</span>
+    <span class="k">if</span> <span class="n">k</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="n">sampling_options</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">G</span><span class="p">):</span>  <span class="c1"># during burn-in</span>
+        <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">k</span> <span class="o">%</span> <span class="n">G</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># Reshuffle the full index set and partition at the beginning of an epoch (during burn-in only)</span>
+            <span class="n">feature_set_partition</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array_split</span><span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="n">full_feature_idx</span><span class="p">),</span> <span class="n">G</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">verbose</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Reshuffling index set at k = %.i and partitioning into G=%.i groups is completed&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">G</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">feature_set_partition</span> <span class="o">=</span> <span class="n">prev_partition</span>
+
+        <span class="n">Fk_current</span> <span class="o">=</span> <span class="n">feature_set_partition</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">((</span><span class="n">k</span> <span class="o">%</span> <span class="n">G</span><span class="p">))]</span>
+        <span class="k">if</span> <span class="n">Fk_current</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">m</span><span class="p">:</span>
+            <span class="n">Fk</span> <span class="o">=</span> <span class="n">Fk_current</span>
+        <span class="k">elif</span> <span class="n">Fk_current</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="n">m</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">((</span><span class="n">k</span> <span class="o">%</span> <span class="n">G</span><span class="p">))</span> <span class="o">&lt;</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">feature_set_partition</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="c1"># take Fk_append from the next block</span>
+                <span class="n">Fk_append</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">feature_set_partition</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">((</span><span class="n">k</span> <span class="o">%</span> <span class="n">G</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)],</span>
+                                       <span class="n">size</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(</span><span class="n">m</span> <span class="o">-</span> <span class="n">Fk_current</span><span class="o">.</span><span class="n">size</span><span class="p">),</span>
+                                       <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">((</span><span class="n">k</span> <span class="o">%</span> <span class="n">G</span><span class="p">))</span> <span class="o">==</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">feature_set_partition</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="n">Fk_append</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">feature_set_partition</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                                       <span class="n">size</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(</span><span class="n">m</span> <span class="o">-</span> <span class="n">Fk_current</span><span class="o">.</span><span class="n">size</span><span class="p">),</span>
+                                       <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">Fk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">Fk_current</span><span class="p">,</span> <span class="n">Fk_append</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># after burn-in</span>
+
+        <span class="k">if</span> <span class="n">keep_all_iters</span><span class="p">:</span>
+            <span class="n">above_thr_mask</span> <span class="o">=</span> <span class="n">Pi_hat_seq</span><span class="p">[:,</span> <span class="p">(</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span> <span class="o">&gt;=</span> <span class="n">sampling_options</span><span class="p">[</span><span class="s2">&quot;active_set_thr&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">above_thr_mask</span> <span class="o">=</span> <span class="n">Pi_hat_seq</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(((</span><span class="n">k</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span> <span class="o">%</span> <span class="n">max_iters_to_keep</span><span class="p">))]</span> <span class="o">&gt;=</span> <span class="n">sampling_options</span><span class="p">[</span><span class="s2">&quot;active_set_thr&quot;</span><span class="p">]</span>
+        <span class="n">active_set_above_thr</span> <span class="o">=</span> <span class="n">full_feature_idx</span><span class="p">[</span><span class="n">above_thr_mask</span><span class="p">]</span>
+        <span class="n">active_set_size</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">above_thr_mask</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">verbose</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The active set above threshold |A| = %.i at iteration k = %.i&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">active_set_size</span><span class="p">,</span> <span class="n">k</span><span class="p">))</span>
+
+        <span class="c1"># Increase the proportion of active set sampled in the subsequent minipatch</span>
+        <span class="n">gamma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">((</span><span class="n">sampling_options</span><span class="p">[</span><span class="s2">&quot;gamma_multiplier&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">gamma</span><span class="p">),</span> <span class="n">gamma_max</span><span class="p">)</span>
+        <span class="n">num_var_from_active</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(</span><span class="n">gamma</span> <span class="o">*</span> <span class="n">active_set_size</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">verbose</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;%.i variables are sampled from active set at iteration k = %.i&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">num_var_from_active</span><span class="p">,</span> <span class="n">k</span><span class="p">))</span>
+        <span class="n">Fk_from_active</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">active_set_above_thr</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">num_var_from_active</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">m</span> <span class="o">-</span> <span class="n">num_var_from_active</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">candidate_set_below_thr</span> <span class="o">=</span> <span class="n">full_feature_idx</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">above_thr_mask</span><span class="p">)]</span>
+            <span class="n">Fk_from_rest</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">candidate_set_below_thr</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(</span><span class="n">m</span> <span class="o">-</span> <span class="n">num_var_from_active</span><span class="p">),</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">Fk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">Fk_from_active</span><span class="p">,</span> <span class="n">Fk_from_rest</span><span class="p">)))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">Fk</span> <span class="o">=</span> <span class="n">Fk_from_active</span>
+
+    <span class="k">if</span> <span class="n">k</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="n">sampling_options</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">G</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Fk</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">feature_set_partition</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Fk</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">gamma</span>
+
+
+<span class="k">def</span> <span class="nf">_adaptive_feature_sampling_probabilistic</span><span class="p">(</span><span class="n">sampling_options</span><span class="p">,</span>
+                                             <span class="n">rng</span><span class="p">,</span>
+                                             <span class="n">m</span><span class="p">,</span>
+                                             <span class="n">M</span><span class="p">,</span>
+                                             <span class="n">G</span><span class="p">,</span>
+                                             <span class="n">keep_all_iters</span><span class="p">,</span>
+                                             <span class="n">max_iters_to_keep</span><span class="p">,</span>
+                                             <span class="n">Pi_hat_seq</span><span class="p">,</span>
+                                             <span class="n">prev_partition</span><span class="p">,</span>
+                                             <span class="n">k</span><span class="p">,</span>
+                                             <span class="n">verbose</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Probabilistic adaptive feature sampling procedure.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sampling_options : dict</span>
+<span class="sd">        Dictionary with parameter names (`str`) as keys and specific parameter</span>
+<span class="sd">        settings as values. See the documentation of `AdaSTAMPS` for details.</span>
+
+<span class="sd">    rng : RandomState instance</span>
+<span class="sd">        Make sure the sampling uses the same RandomState instance for all iterations.</span>
+
+<span class="sd">    m : int</span>
+<span class="sd">        The number of features in a minipatch.</span>
+
+<span class="sd">    M : int</span>
+<span class="sd">        The total number of input features.</span>
+
+<span class="sd">    G : int</span>
+<span class="sd">        Number of iterations for each burn-in epoch.</span>
+
+<span class="sd">    keep_all_iters : bool</span>
+<span class="sd">        See the documentation of `AdaSTAMPS` for details.</span>
+
+<span class="sd">    max_iters_to_keep : int</span>
+<span class="sd">        See the documentation of `AdaSTAMPS` for details.</span>
+
+<span class="sd">    Pi_hat_seq : array of shape (n_features, num_iterations)</span>
+<span class="sd">        Contains the selection frequency of features over previous iterations.</span>
+
+<span class="sd">    prev_partition : list of arrays</span>
+<span class="sd">        Each element contains the indices of features that are sampled into a minipatch.</span>
+
+<span class="sd">    k : int</span>
+<span class="sd">        The current iteration number.</span>
+
+<span class="sd">    verbose : {0, 1, 2}</span>
+<span class="sd">        Controls the verbosity.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Fk : array of shape (m, )</span>
+<span class="sd">        Contains the integer indices of the features from X that are in the current minipatch.</span>
+
+<span class="sd">    rng : RandomState instance</span>
+
+<span class="sd">    feature_set_partition : list of arrays</span>
+<span class="sd">        This is only returned during the burn-in stage.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Initialize array to store index for all M features</span>
+    <span class="n">full_feature_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">k</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="n">sampling_options</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">G</span><span class="p">):</span>  <span class="c1"># during burn-in</span>
+        <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">k</span> <span class="o">%</span> <span class="n">G</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># Reshuffle the full index set and partition at the beginning of an epoch (during burn-in only)</span>
+            <span class="n">feature_set_partition</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array_split</span><span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="n">full_feature_idx</span><span class="p">),</span> <span class="n">G</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">verbose</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Reshuffling index set at k = %.i and partitioning into G=%.i groups is completed&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">G</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">feature_set_partition</span> <span class="o">=</span> <span class="n">prev_partition</span>
+
+        <span class="n">Fk_current</span> <span class="o">=</span> <span class="n">feature_set_partition</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">((</span><span class="n">k</span> <span class="o">%</span> <span class="n">G</span><span class="p">))]</span>
+        <span class="k">if</span> <span class="n">Fk_current</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">m</span><span class="p">:</span>
+            <span class="n">Fk</span> <span class="o">=</span> <span class="n">Fk_current</span>
+        <span class="k">elif</span> <span class="n">Fk_current</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="n">m</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">((</span><span class="n">k</span> <span class="o">%</span> <span class="n">G</span><span class="p">))</span> <span class="o">&lt;</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">feature_set_partition</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="c1"># take Fk_append from the next block</span>
+                <span class="n">Fk_append</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">feature_set_partition</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">((</span><span class="n">k</span> <span class="o">%</span> <span class="n">G</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)],</span>
+                                       <span class="n">size</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(</span><span class="n">m</span> <span class="o">-</span> <span class="n">Fk_current</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">((</span><span class="n">k</span> <span class="o">%</span> <span class="n">G</span><span class="p">))</span> <span class="o">==</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">feature_set_partition</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="n">Fk_append</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">feature_set_partition</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                                       <span class="n">size</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(</span><span class="n">m</span> <span class="o">-</span> <span class="n">Fk_current</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">Fk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">Fk_current</span><span class="p">,</span> <span class="n">Fk_append</span><span class="p">))</span>
+
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># after burn-in</span>
+
+        <span class="k">if</span> <span class="n">keep_all_iters</span><span class="p">:</span>
+            <span class="n">feature_prob</span> <span class="o">=</span> <span class="n">Pi_hat_seq</span><span class="p">[:,</span> <span class="p">(</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">Pi_hat_seq</span><span class="p">[:,</span> <span class="p">(</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">feature_prob</span> <span class="o">=</span> <span class="p">(</span><span class="n">Pi_hat_seq</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(((</span><span class="n">k</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span> <span class="o">%</span> <span class="n">max_iters_to_keep</span><span class="p">))]</span>
+                            <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">Pi_hat_seq</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(((</span><span class="n">k</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span> <span class="o">%</span> <span class="n">max_iters_to_keep</span><span class="p">))]))</span>
+
+        <span class="n">Fk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">m</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">feature_prob</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">k</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="n">sampling_options</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">G</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Fk</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">feature_set_partition</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Fk</span><span class="p">,</span> <span class="n">rng</span>
+
+
+<div class="viewcode-block" id="AdaSTAMPS"><a class="viewcode-back" href="../../../generated/mplearn.feature_selection.AdaSTAMPS.html#mplearn.feature_selection.AdaSTAMPS">[docs]</a><span class="k">class</span> <span class="nc">AdaSTAMPS</span><span class="p">(</span><span class="n">BaseLearner</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Feature selection with Adaptive Stable Minipatch Selection.</span>
+
+<span class="sd">    This is a meta-algorithm that repeatedly fits base feature selectors to many</span>
+<span class="sd">    random or adaptively chosen subsets of both observations and features (minipatches)</span>
+<span class="sd">    and ensembles the selection events from all these base selectors. At the end</span>
+<span class="sd">    of the algorithm, the final selection frequency is computed for each</span>
+<span class="sd">    input feature as the number of times it is sampled and then selected by base selectors</span>
+<span class="sd">    divided by the number of times it is sampled into minipatches. The selection</span>
+<span class="sd">    frequency signifies the importance of features. The algorithm eventually selects</span>
+<span class="sd">    the set of features whose selection frequency is above a certain threshold (can be</span>
+<span class="sd">    either user-specific or determined automatically).</span>
+
+<span class="sd">    Important note: `AdaSTAMPS` assumes that all necessary pre-processing steps</span>
+<span class="sd">    prior to feature selection have already been carried out on the input data (X, y).</span>
+<span class="sd">    For instance, data standardization (centering and/or scaling) needs to be</span>
+<span class="sd">    performed on the raw data prior to calling `fit()` if such data pre-processing</span>
+<span class="sd">    is deemed necessary by the users.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    base_selector : ``Selector`` instance</span>
+<span class="sd">        A feature selector with a ``fit`` method that provides</span>
+<span class="sd">        binary selection indicators (1 for selected features and</span>
+<span class="sd">        0 for unselected features). See **Notes** for more details.</span>
+
+<span class="sd">    minipatch_m_ratio : float, default=0.05</span>
+<span class="sd">        The fraction of features to draw from X to train each base selector.</span>
+<span class="sd">        Specifically, `round(minipatch_m_ratio * X.shape[1])` features are drawn</span>
+<span class="sd">        into each minipatch. Thus, `minipatch_m_ratio` should be in the</span>
+<span class="sd">        interval (0.0, 1.0]. See **Notes** for more details.</span>
+
+<span class="sd">    minipatch_n_ratio : float, default=0.5</span>
+<span class="sd">        The fraction of observations to draw from X to train each base selector.</span>
+<span class="sd">        Specifically, `round(minipatch_n_ratio * X.shape[0])` observations are drawn</span>
+<span class="sd">        into each minipatch. Thus, `minipatch_n_ratio` should be in the</span>
+<span class="sd">        interval (0.0, 1.0]. See **Notes** for more details.</span>
+
+<span class="sd">    sampling_options : dict, default=None</span>
+<span class="sd">        Dictionary with parameter names (`str`) as keys and specific parameter</span>
+<span class="sd">        settings as values. This specifies the randomization scheme used to sample</span>
+<span class="sd">        features into minipatches. Unless set to `None`, `sampling_options` is</span>
+<span class="sd">        required to have a key named `&#39;mode&#39;`, whose value must be one of {&#39;ee&#39;, &#39;prob&#39;, &#39;uniform&#39;}.</span>
+<span class="sd">        It is recommended to set `sampling_options` to `None` for starters, which uses the</span>
+<span class="sd">        default Exploitation &amp; Exploration adaptive feature sampling scheme with parameter</span>
+<span class="sd">        values set to respective recommended values as described below. See **Notes** for more</span>
+<span class="sd">        details.</span>
+
+<span class="sd">        - If `&#39;mode&#39;` has value &#39;ee&#39;, it uses the Exploitation &amp; Exploration scheme to</span>
+<span class="sd">          adaptively sample features into minipatches. In this case, `sampling_options`</span>
+<span class="sd">          is required to have the following parameters as additional keys:</span>
+
+<span class="sd">          - `&#39;E&#39;` : int. The number of burn-in epochs during which every feature is sampled</span>
+<span class="sd">            exactly `&#39;E&#39;` times to get an initial guess of feature importance before starting</span>
+<span class="sd">            the adaptive sampling of features. A value of 10 generally works well for many problems.</span>
+<span class="sd">            Note that a larger `&#39;E&#39;` generally requires increase the maximum number of</span>
+<span class="sd">            iterations (`&#39;max_k&#39;`) in `stopping_criteria_options`.</span>
+<span class="sd">          - `&#39;active_set_thr&#39;` : float. The selection frequency threshold above which</span>
+<span class="sd">            a feature is put into the active set during the adaptive sampling stage.</span>
+<span class="sd">            A value of 0.1 generally works well for many problems. Note that its value</span>
+<span class="sd">            should be in the interval (0.0, 1.0). A larger value generally means fewer</span>
+<span class="sd">            features in the active set.</span>
+<span class="sd">          - `&#39;gamma_min&#39;` : float. The minimum proportion of features in the active set to</span>
+<span class="sd">            sample into minipatches at the beginning of the adaptive sampling stage.</span>
+<span class="sd">            It is recommened to fix its value to 0.5. Note that its value should be in</span>
+<span class="sd">            the interval (0.0, 1.0), and should not exceed the value of `&#39;gamma_max&#39;`.</span>
+<span class="sd">          - `&#39;gamma_max&#39;` : float. The maximum proportion of features in the active set to</span>
+<span class="sd">            sample into minipatches as the adaptive sampling scheme proceeds. It is recommened</span>
+<span class="sd">            to fix its value to 1.0. Note that its value should be in the interval (0.0, 1.0).</span>
+<span class="sd">          - `&#39;gamma_len&#39;` : int. The number of iterations it takes for the adaptive feature</span>
+<span class="sd">            sampler to go from `&#39;gamma_min&#39;` to `&#39;gamma_max&#39;`. This controls the trade-off</span>
+<span class="sd">            between exploiting the active set and exploring the remaining input feature space.</span>
+<span class="sd">            In general, a smaller value favors exploitation while a larger value favors exploration.</span>
+<span class="sd">            A value in the range [50, 500] generally works well for many problems.</span>
+
+<span class="sd">        - If `&#39;mode&#39;` has value &#39;prob&#39;, it uses the Probabilistic scheme to adaptively sample</span>
+<span class="sd">          features into minipatches. In this case, `sampling_options` is required to have</span>
+<span class="sd">          the following parameters as additional keys:</span>
+
+<span class="sd">          - `&#39;E&#39;` : Int. This is the same as the `&#39;E&#39;` parameter in the case of `&#39;mode&#39;` being &#39;ee&#39;.</span>
+<span class="sd">            See the descriptions above for details.</span>
+
+<span class="sd">        - If `&#39;mode&#39;` has value &#39;uniform&#39;, it samples features uniformly at random into minipatches.</span>
+<span class="sd">          In this case, `sampling_options` does not need to have other key-value pairs.</span>
+
+<span class="sd">    stopping_criteria_options : dict, default=None</span>
+<span class="sd">        Dictionary with parameter names (`str`) as keys and specific parameter</span>
+<span class="sd">        settings as values. This specifies parameter values for the data-driven stopping rule,</span>
+<span class="sd">        which stops the meta-algorithm when the rank ordering of the top features in terms of</span>
+<span class="sd">        selection frequency remain unchanged for the past `&#39;num_last_iterations&#39;`.</span>
+<span class="sd">        Unless set to `None`, `stopping_criteria_options` is required to have</span>
+<span class="sd">        4 keys: `&#39;tau_u&#39;`, `&#39;tau_l&#39;`, `&#39;max_k&#39;`, and `&#39;num_last_iterations&#39;`. It is recommended</span>
+<span class="sd">        to set `stopping_criteria_options` to `None` for starters, which sets the parameter values to</span>
+<span class="sd">        the respective default as described below.</span>
+
+<span class="sd">        - `&#39;tau_u&#39;` : int. This specifies the maximum number of top features</span>
+<span class="sd">          whose rank orderings should be considered when assessing the stopping rule. It is</span>
+<span class="sd">          recommened to set its value to well exceed the expected number of truly informative features.</span>
+<span class="sd">          The default value is set to 30. Note that its value should be much smaller than the total</span>
+<span class="sd">          number of input features.</span>
+<span class="sd">        - `&#39;tau_l&#39;` : int. This specifies the minimum number of top features</span>
+<span class="sd">          whose rank orderings should be considered when assessing the stopping rule. It is</span>
+<span class="sd">          recommened to set its value to well exceed the expected number of truly informative features.</span>
+<span class="sd">          The default value is set to 15. Note that its value should be much smaller than `&#39;tau_u&#39;`.</span>
+<span class="sd">        - `&#39;num_last_iterations&#39;` : int. The algorithm stops when the rank ordering of the</span>
+<span class="sd">          top features in terms of selection frequency remain unchanged</span>
+<span class="sd">          for the past `&#39;num_last_iterations&#39;`. It is recommended to fix its value to 100. Note that</span>
+<span class="sd">          a unreasonably large value could render the stopping rule ineffective.</span>
+<span class="sd">        - `&#39;max_k&#39;` : int. The maximum number of iterations to run the meta-algorithm if the data-driven</span>
+<span class="sd">          stopping rule has not stopped it earlier. The default value is set to 5000. If `&#39;mode&#39;` of</span>
+<span class="sd">          `sampling_options` is set to {&#39;ee&#39;, &#39;prob&#39;} and `&#39;max_k&#39;` is set to `None`, the algorithm will</span>
+<span class="sd">          automatically compute `&#39;max_k&#39;` to be 5 times the number of burn-in iterations.</span>
+
+<span class="sd">    random_state : int, default=0</span>
+<span class="sd">        Controls both the randomness of sampling observations and sampling features into minipatches.</span>
+
+<span class="sd">    keep_all_iters : bool, default=True</span>
+<span class="sd">        Whether to store and output intermediate featrue selection frequency across all iterations. It could be</span>
+<span class="sd">        useful to visualize selection frequency of all features versus iteration number for qualitatively</span>
+<span class="sd">        discovering informative features. However, if the number of input feature is large (e.g. hundreds of thousands),</span>
+<span class="sd">        then it is recommended to set this to `False` to avoid consuming too much memory. If set to `False`, it is</span>
+<span class="sd">        required to set a value for `max_iters_to_keep`.</span>
+
+<span class="sd">    max_iters_to_keep : int, default=None</span>
+<span class="sd">        This value is ignored if `keep_all_iters` is `True`. Otherwise, this specifies the</span>
+<span class="sd">        number of iterations (counting backwards from the last iteration) for which feature</span>
+<span class="sd">        selection frequency should be stored and output. Note that `max_iters_to_keep` should be</span>
+<span class="sd">        at least as large as the `&#39;num_last_iterations&#39;` of `stopping_criteria_options` (which is the</span>
+<span class="sd">        default when `max_iters_to_keep` is set to `None`).</span>
+
+<span class="sd">    verbose : {0, 1, 2}</span>
+<span class="sd">        Controls the verbosity: the higher, more messages are displayed.</span>
+
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    last_k_ : int</span>
+<span class="sd">        The total number of iterations for which the meta-algorithm has run.</span>
+
+<span class="sd">    Pi_hat_last_k_ : array of shape (n_features, )</span>
+<span class="sd">        The final selection frequency for each of the input features. Each element is in the interval [0.0, 1.0].</span>
+<span class="sd">        A larger value indicates that the corresponding feature is more informative, vice versa.</span>
+
+<span class="sd">    full_Pi_hat_seq_ : array of shape (n_features, `last_k_`) or (n_features, `max_iters_to_keep`)</span>
+<span class="sd">        If `keep_all_iters` is `True`, then this is an array of shape (n_features, `last_k_`) containing</span>
+<span class="sd">        the selection frequency of all input features from first iteration to the last. If `keep_all_iters`</span>
+<span class="sd">        is `False`, then this is an array of shape (n_features, `max_iters_to_keep`) containing the</span>
+<span class="sd">        selection frequency of all input features for the last `max_iters_to_keep` iterations.</span>
+
+<span class="sd">    full_Pi_hat_k_seq_ : array of shape (`last_k_`, ) or (`max_iters_to_keep`, )</span>
+<span class="sd">        This contains the iteration numbers corresponding to the columns of `full_Pi_hat_seq_`.</span>
+
+<span class="sd">    burn_in_length_ : int</span>
+<span class="sd">        The total number of iterations spent in the burn-in stage. If `&#39;mode&#39;` of `sampling_options`</span>
+<span class="sd">        is set to &#39;uniform&#39; or if `keep_all_iters` is `False`, this is set to `None`. </span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    - More details about `base_selector`: The AdaSTAMPS meta-algorithm can be employed with</span>
+<span class="sd">      a wide variety of feature selection techniques as the base selector on minipatches.</span>
+<span class="sd">      This package current provides two highly efficient base selector classes -</span>
+<span class="sd">      `minipatch_feature_selection.base_selector.ThresholdedOLS` for regression</span>
+<span class="sd">      problems and `minipatch_feature_selection.base_selector.DecisionTreeSelector` for</span>
+<span class="sd">      both regression and classification problems. However, user-supplied selector is</span>
+<span class="sd">      also allowed as long as the selector class follows the same structure as the two</span>
+<span class="sd">      base selectors mentioned above (i.e. has a ``fit`` method that accepts minipatch</span>
+<span class="sd">      feature indices and provides binary selection indicators (1 for selected features and</span>
+<span class="sd">      0 for unselected features).</span>
+<span class="sd">    - More details about choice of minipatch size: Suppose the data X has N observations (rows)</span>
+<span class="sd">      and M features (columns). Following the notations of [1], a minipatch is obtained by</span>
+<span class="sd">      subsampling n observations and m features simultaneously without replacement from X</span>
+<span class="sd">      using some form of randomization. The parameter `minipatch_m_ratio` represents :math:`m/M`</span>
+<span class="sd">      and `minipatch_n_ratio` represents :math:`n/N`. As demonstrated in [1], the performance</span>
+<span class="sd">      of the meta-algorithm is robust for a sensible range of n and m values. The general rule</span>
+<span class="sd">      of thumb is to take m to well exceed the expected number of true informative features</span>
+<span class="sd">      (e.g. 3-10 times the expected number of true informative features) and then pick n relative to</span>
+<span class="sd">      m such that it well exceeds the sample complexity of the base selector used.</span>
+<span class="sd">    - We refer the users to the original paper [1] for detailed algorithms for the various</span>
+<span class="sd">      sampling procedures and the stopping rule.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [1] Yao, T. and Allen, G. I., &quot;Feature Selection for Huge Data via Minipatch Learning&quot;,</span>
+<span class="sd">           arXiv:2010.08529.</span>
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    The following example shows how to retrieve the 4 truly informative</span>
+<span class="sd">    features in the sparse regression dataset.</span>
+<span class="sd">    &gt;&gt;&gt; from sklearn.datasets import make_sparse_uncorrelated</span>
+<span class="sd">    &gt;&gt;&gt; from mplearn.feature_selection.base_selector import ThresholdedOLS</span>
+<span class="sd">    &gt;&gt;&gt; from mplearn.feature_selection import AdaSTAMPS</span>
+<span class="sd">    &gt;&gt;&gt; X, y = make_sparse_uncorrelated(n_samples=100, n_features=10, random_state=0)</span>
+<span class="sd">    &gt;&gt;&gt; thresholded_ols = ThresholdedOLS(num_features_to_select=None, screening_thresh=None)</span>
+<span class="sd">    &gt;&gt;&gt; selector = AdaSTAMPS(base_selector=thresholded_ols,</span>
+<span class="sd">    ...                      minipatch_m_ratio=0.5,</span>
+<span class="sd">    ...                      minipatch_n_ratio=0.5,</span>
+<span class="sd">    ...                      random_state=123,</span>
+<span class="sd">    ...                      verbose=0)</span>
+<span class="sd">    &gt;&gt;&gt; fitted_selector = selector.fit(X, y)</span>
+<span class="sd">    &gt;&gt;&gt; fitted_selector.get_support(indices=True, pi_thr=0.5)</span>
+<span class="sd">    array([0, 1, 2, 3])</span>
+<span class="sd">    &gt;&gt;&gt; X_new = fitted_selector.transform(X, pi_thr=0.5)</span>
+<span class="sd">    &gt;&gt;&gt; X_new.shape</span>
+<span class="sd">    (100, 4)</span>
+<span class="sd">    &gt;&gt;&gt; fitted_selector.visualize_selection_frequency(max_features_to_plot=None)  # doctest: +SKIP</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">base_selector</span><span class="p">,</span>
+                 <span class="o">*</span><span class="p">,</span>
+                 <span class="n">minipatch_m_ratio</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
+                 <span class="n">minipatch_n_ratio</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+                 <span class="n">sampling_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">stopping_criteria_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                 <span class="n">keep_all_iters</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">max_iters_to_keep</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="n">sampling_options</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">sampling_options</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="s2">&quot;ee&quot;</span><span class="p">,</span>
+                                <span class="s2">&quot;E&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+                                <span class="s2">&quot;active_set_thr&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+                                <span class="s2">&quot;gamma_min&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+                                <span class="s2">&quot;gamma_max&quot;</span><span class="p">:</span> <span class="mf">1.</span><span class="p">,</span>
+                                <span class="s2">&quot;gamma_len&quot;</span><span class="p">:</span> <span class="mi">50</span><span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">stopping_criteria_options</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">stopping_criteria_options</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;tau_u&quot;</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span>
+                                         <span class="s2">&quot;tau_l&quot;</span><span class="p">:</span> <span class="mi">15</span><span class="p">,</span>
+                                         <span class="s2">&quot;max_k&quot;</span><span class="p">:</span> <span class="mi">5000</span><span class="p">,</span>
+                                         <span class="s2">&quot;num_last_iterations&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">base_selector</span> <span class="o">=</span> <span class="n">base_selector</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">minipatch_m_ratio</span> <span class="o">=</span> <span class="n">minipatch_m_ratio</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">minipatch_n_ratio</span> <span class="o">=</span> <span class="n">minipatch_n_ratio</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sampling_options</span> <span class="o">=</span> <span class="n">sampling_options</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stopping_criteria_options</span> <span class="o">=</span> <span class="n">stopping_criteria_options</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">random_state</span> <span class="o">=</span> <span class="n">random_state</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">keep_all_iters</span> <span class="o">=</span> <span class="n">keep_all_iters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_iters_to_keep</span> <span class="o">=</span> <span class="n">max_iters_to_keep</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+
+<div class="viewcode-block" id="AdaSTAMPS.fit"><a class="viewcode-back" href="../../../generated/mplearn.feature_selection.AdaSTAMPS.html#mplearn.feature_selection.AdaSTAMPS.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Fit the AdaSTAMPS model to data.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X : ndarray of shape (n_samples, n_features)</span>
+<span class="sd">            The training input samples. Note that data frame or sparse matrix format</span>
+<span class="sd">            are not allowed. Also, the dtype of X has to be numeric (e.g. float, int).</span>
+<span class="sd">            The algorithm expects that all appropriate preprocessing steps on X have been completed.</span>
+
+<span class="sd">        y : ndarray of shape (n_samples,)</span>
+<span class="sd">            The target values. Note that for classification problems (categorical y),</span>
+<span class="sd">            the input y should contain integers denoting class labels instead of actual</span>
+<span class="sd">            class names (`str`). In other words, the dtype of y has to be numeric (e.g. float, int).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        self : object</span>
+<span class="sd">            Fitted estimator.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        Allows NaN/Inf in the input if the underlying estimator does as well.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Specify minipatch size</span>
+        <span class="n">m_ratio</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">minipatch_m_ratio</span>  <span class="c1"># m/M</span>
+        <span class="n">n_ratio</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">minipatch_n_ratio</span>  <span class="c1"># n/N</span>
+
+        <span class="c1"># Dimensions of data matrix</span>
+        <span class="n">N</span><span class="p">,</span> <span class="n">M</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="n">n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">n_ratio</span> <span class="o">*</span> <span class="n">N</span><span class="p">))</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">m_ratio</span> <span class="o">*</span> <span class="n">M</span><span class="p">))</span>
+
+        <span class="c1"># Specify the maximum number of iterations to run if the data-driven stopping criterion is not satisfied</span>
+        <span class="n">max_k</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stopping_criteria_options</span><span class="p">[</span><span class="s2">&quot;max_k&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">max_k</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampling_options</span><span class="p">[</span><span class="s2">&quot;mode&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;uniform&quot;</span><span class="p">:</span>
+                <span class="n">max_k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="mf">1.</span> <span class="o">/</span> <span class="n">m_ratio</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampling_options</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">])</span> <span class="o">*</span> <span class="mi">5</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Setting max_k to None is not allowed when sampling mode is uniform.&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Initialize parameters for the feature sampling procedure</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampling_options</span><span class="p">[</span><span class="s2">&quot;mode&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;uniform&quot;</span><span class="p">:</span>
+            <span class="n">G</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="mf">1.</span> <span class="o">/</span> <span class="n">m_ratio</span><span class="p">))</span>
+            <span class="n">iter_to_start_checking_criterion</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sampling_options</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">G</span><span class="p">)</span>
+            <span class="n">burn_in_length</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sampling_options</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">G</span><span class="p">)</span>
+            <span class="n">prev_partition</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array_split</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">M</span><span class="p">),</span> <span class="n">G</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampling_options</span><span class="p">[</span><span class="s2">&quot;mode&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;ee&quot;</span><span class="p">:</span>
+                <span class="n">gamma_seq_after_burn_in</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">geomspace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sampling_options</span><span class="p">[</span><span class="s2">&quot;gamma_min&quot;</span><span class="p">],</span>
+                                                       <span class="bp">self</span><span class="o">.</span><span class="n">sampling_options</span><span class="p">[</span><span class="s2">&quot;gamma_max&quot;</span><span class="p">],</span>
+                                                       <span class="n">num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sampling_options</span><span class="p">[</span><span class="s2">&quot;gamma_len&quot;</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sampling_options</span><span class="p">[</span><span class="s2">&quot;gamma_multiplier&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gamma_seq_after_burn_in</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">gamma_seq_after_burn_in</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="c1"># Initialize gamma to start from the minimum value</span>
+                <span class="n">gamma</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampling_options</span><span class="p">[</span><span class="s2">&quot;gamma_min&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">iter_to_start_checking_criterion</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="n">max_k</span><span class="p">)</span>
+            <span class="n">burn_in_length</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Specify parameter values for the data-driven stopping criteria</span>
+        <span class="n">num_last_iterations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stopping_criteria_options</span><span class="p">[</span><span class="s2">&quot;num_last_iterations&quot;</span><span class="p">]</span>
+        <span class="n">num_top_var_to_check_lower_bound</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stopping_criteria_options</span><span class="p">[</span><span class="s2">&quot;tau_l&quot;</span><span class="p">],</span> <span class="nb">int</span><span class="p">(</span><span class="mf">0.5</span><span class="o">*</span><span class="n">M</span><span class="p">))</span>
+        <span class="n">stop_criterion_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">stopping_criteria_options</span><span class="p">[</span><span class="s2">&quot;tau_u&quot;</span><span class="p">],</span> <span class="n">num_last_iterations</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+        <span class="n">stop_criterion_met</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">stop_criterion_counter</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">iter_to_start_checking_criterion</span>
+
+        <span class="c1"># Initialize array to store feature selection frequency over iterations</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">keep_all_iters</span><span class="p">:</span>
+            <span class="n">Pi_hat_seq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">M</span><span class="p">,</span> <span class="p">(</span><span class="n">max_k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_iters_to_keep</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">max_iters_to_keep</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stopping_criteria_options</span><span class="p">[</span><span class="s2">&quot;num_last_iterations&quot;</span><span class="p">]</span>
+            <span class="n">Pi_hat_seq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">M</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_iters_to_keep</span><span class="p">))</span>
+            <span class="n">Pi_hat_k_seq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iters_to_keep</span><span class="p">)</span>
+
+        <span class="c1"># Initialize random number generator</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)</span>
+
+        <span class="c1"># Initialize iteration counter</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1"># Get a clean copy of the base selector</span>
+        <span class="n">base_selector</span> <span class="o">=</span> <span class="n">clone</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base_selector</span><span class="p">)</span>
+
+        <span class="c1"># Keep a running tally of the number of times each variable is subsampled and selected</span>
+        <span class="n">total_times_subsampled_selected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+        <span class="n">total_times_subsampled</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+
+        <span class="n">continue_alg</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">while</span> <span class="n">continue_alg</span><span class="p">:</span>
+
+            <span class="c1"># Increment iteration counter</span>
+            <span class="n">k</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="c1"># Initialize temporary storage for results (cleared after each iteration)</span>
+            <span class="n">var_subsampled_indicator</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+            <span class="n">var_subsampled_selected_indicator</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+
+            <span class="c1"># Subsample n observations from {1,...,N} uniformly at random without replacement</span>
+            <span class="n">Ik</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampling_options</span><span class="p">[</span><span class="s2">&quot;mode&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;uniform&quot;</span><span class="p">:</span> <span class="c1"># use uniform sampling of features</span>
+                <span class="n">Fk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">m</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampling_options</span><span class="p">[</span><span class="s2">&quot;mode&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;ee&quot;</span><span class="p">:</span> <span class="c1"># use Exploitation and Exploration Adaptive Feature Sampling</span>
+                <span class="k">if</span> <span class="n">k</span> <span class="o">&lt;=</span> <span class="n">burn_in_length</span><span class="p">:</span>
+                    <span class="n">Fk</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">prev_partition</span> <span class="o">=</span> <span class="n">_adaptive_feature_sampling_exploitation_exploration</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sampling_options</span><span class="p">,</span>
+                                                                                                         <span class="n">rng</span><span class="p">,</span>
+                                                                                                         <span class="n">gamma</span><span class="p">,</span>
+                                                                                                         <span class="n">m</span><span class="p">,</span>
+                                                                                                         <span class="n">M</span><span class="p">,</span>
+                                                                                                         <span class="n">G</span><span class="p">,</span>
+                                                                                                         <span class="bp">self</span><span class="o">.</span><span class="n">keep_all_iters</span><span class="p">,</span>
+                                                                                                         <span class="bp">self</span><span class="o">.</span><span class="n">max_iters_to_keep</span><span class="p">,</span>
+                                                                                                         <span class="n">Pi_hat_seq</span><span class="p">,</span>
+                                                                                                         <span class="n">prev_partition</span><span class="p">,</span>
+                                                                                                         <span class="n">k</span><span class="p">,</span>
+                                                                                                         <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">Fk</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">gamma</span> <span class="o">=</span> <span class="n">_adaptive_feature_sampling_exploitation_exploration</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sampling_options</span><span class="p">,</span>
+                                                                                         <span class="n">rng</span><span class="p">,</span>
+                                                                                         <span class="n">gamma</span><span class="p">,</span>
+                                                                                         <span class="n">m</span><span class="p">,</span>
+                                                                                         <span class="n">M</span><span class="p">,</span>
+                                                                                         <span class="n">G</span><span class="p">,</span>
+                                                                                         <span class="bp">self</span><span class="o">.</span><span class="n">keep_all_iters</span><span class="p">,</span>
+                                                                                         <span class="bp">self</span><span class="o">.</span><span class="n">max_iters_to_keep</span><span class="p">,</span>
+                                                                                         <span class="n">Pi_hat_seq</span><span class="p">,</span>
+                                                                                         <span class="n">prev_partition</span><span class="p">,</span>
+                                                                                         <span class="n">k</span><span class="p">,</span>
+                                                                                         <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">)</span>
+
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampling_options</span><span class="p">[</span><span class="s2">&quot;mode&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;prob&quot;</span><span class="p">:</span> <span class="c1"># use Probabilistic Adaptive Feature Sampling</span>
+                <span class="k">if</span> <span class="n">k</span> <span class="o">&lt;=</span> <span class="n">burn_in_length</span><span class="p">:</span>
+                    <span class="n">Fk</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">prev_partition</span> <span class="o">=</span> <span class="n">_adaptive_feature_sampling_probabilistic</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sampling_options</span><span class="p">,</span>
+                                                                                       <span class="n">rng</span><span class="p">,</span>
+                                                                                       <span class="n">m</span><span class="p">,</span>
+                                                                                       <span class="n">M</span><span class="p">,</span>
+                                                                                       <span class="n">G</span><span class="p">,</span>
+                                                                                       <span class="bp">self</span><span class="o">.</span><span class="n">keep_all_iters</span><span class="p">,</span>
+                                                                                       <span class="bp">self</span><span class="o">.</span><span class="n">max_iters_to_keep</span><span class="p">,</span>
+                                                                                       <span class="n">Pi_hat_seq</span><span class="p">,</span>
+                                                                                       <span class="n">prev_partition</span><span class="p">,</span>
+                                                                                       <span class="n">k</span><span class="p">,</span>
+                                                                                       <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">Fk</span><span class="p">,</span> <span class="n">rng</span> <span class="o">=</span> <span class="n">_adaptive_feature_sampling_probabilistic</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sampling_options</span><span class="p">,</span>
+                                                                       <span class="n">rng</span><span class="p">,</span>
+                                                                       <span class="n">m</span><span class="p">,</span>
+                                                                       <span class="n">M</span><span class="p">,</span>
+                                                                       <span class="n">G</span><span class="p">,</span>
+                                                                       <span class="bp">self</span><span class="o">.</span><span class="n">keep_all_iters</span><span class="p">,</span>
+                                                                       <span class="bp">self</span><span class="o">.</span><span class="n">max_iters_to_keep</span><span class="p">,</span>
+                                                                       <span class="n">Pi_hat_seq</span><span class="p">,</span>
+                                                                       <span class="n">prev_partition</span><span class="p">,</span>
+                                                                       <span class="n">k</span><span class="p">,</span>
+                                                                       <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Other sampling procedures not implemented.&#39;</span><span class="p">)</span>
+
+            <span class="n">stop_criterion_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">var_subsampled_indicator</span><span class="p">[</span><span class="n">Fk</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+            <span class="n">base_selector_on_minipatch</span> <span class="o">=</span> <span class="n">clone</span><span class="p">(</span><span class="n">base_selector</span><span class="p">)</span>
+            <span class="n">selection_on_minipatch</span> <span class="o">=</span> <span class="n">base_selector_on_minipatch</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">Ik</span><span class="p">),</span> <span class="nb">list</span><span class="p">(</span><span class="n">Fk</span><span class="p">))],</span> <span class="n">y</span><span class="p">[</span><span class="n">Ik</span><span class="p">],</span> <span class="n">Fk</span><span class="p">)</span>
+
+            <span class="c1"># Set the j-th entry to 1 if \beta_j^{(k)} ~= 0 and j \in Fk</span>
+            <span class="n">var_subsampled_selected_indicator</span><span class="p">[</span><span class="n">selection_on_minipatch</span><span class="o">.</span><span class="n">Fk_</span><span class="p">]</span> <span class="o">=</span> <span class="n">selection_on_minipatch</span><span class="o">.</span><span class="n">selection_indicator_</span>
+
+            <span class="c1"># Keep a running tally of each feature&#39;s stability score up until the kth iteration (inclusive)</span>
+            <span class="n">total_times_subsampled_selected</span> <span class="o">=</span> <span class="n">total_times_subsampled_selected</span> <span class="o">+</span> <span class="n">var_subsampled_selected_indicator</span>
+            <span class="n">total_times_subsampled</span> <span class="o">=</span> <span class="n">total_times_subsampled</span> <span class="o">+</span> <span class="n">var_subsampled_indicator</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">keep_all_iters</span><span class="p">:</span>
+                <span class="n">Pi_hat_seq</span><span class="p">[:,</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">total_times_subsampled_selected</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">total_times_subsampled</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">stop_criterion_counter</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="c1"># estimate size of possible stable set whose selection frequency are above 0.5</span>
+                    <span class="n">num_var_above_tau_thr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">Pi_hat_seq</span><span class="p">[:,</span> <span class="n">k</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mf">0.5</span><span class="p">)</span>
+                    <span class="n">num_top_var_to_check</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stopping_criteria_options</span><span class="p">[</span><span class="s2">&quot;tau_u&quot;</span><span class="p">],</span>
+                                                      <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">num_var_above_tau_thr</span><span class="p">,</span>
+                                                                 <span class="n">num_top_var_to_check_lower_bound</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">Pi_hat_seq</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(((</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_iters_to_keep</span><span class="p">))]</span> <span class="o">=</span> <span class="p">(</span><span class="n">total_times_subsampled_selected</span>
+                                                                             <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">total_times_subsampled</span><span class="p">))</span>
+                <span class="n">Pi_hat_k_seq</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(((</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_iters_to_keep</span><span class="p">))]</span> <span class="o">=</span> <span class="n">k</span>
+                <span class="k">if</span> <span class="n">stop_criterion_counter</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">num_var_above_tau_thr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">Pi_hat_seq</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(((</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_iters_to_keep</span><span class="p">))]</span> <span class="o">&gt;=</span> <span class="mf">0.5</span><span class="p">)</span>
+                    <span class="n">num_top_var_to_check</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stopping_criteria_options</span><span class="p">[</span><span class="s2">&quot;tau_u&quot;</span><span class="p">],</span>
+                                                      <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">num_var_above_tau_thr</span><span class="p">,</span>
+                                                                 <span class="n">num_top_var_to_check_lower_bound</span><span class="p">))</span>
+
+            <span class="c1"># Compute the stopping criterion at the kth iteration</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="o">&gt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">iter_to_start_checking_criterion</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">keep_all_iters</span><span class="p">:</span>
+                    <span class="n">top_Pi_hat_descend_idx</span> <span class="o">=</span> <span class="n">manual_sort</span><span class="p">(</span><span class="n">Pi_hat_seq</span><span class="p">[:,</span> <span class="n">k</span><span class="p">],</span>
+                                                         <span class="n">num_top_var_to_check</span><span class="p">,</span>
+                                                         <span class="bp">self</span><span class="o">.</span><span class="n">stopping_criteria_options</span><span class="p">[</span><span class="s2">&quot;tau_u&quot;</span><span class="p">])</span>
+                    <span class="n">stop_criterion_matrix</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(((</span><span class="n">stop_criterion_counter</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">num_last_iterations</span><span class="p">))]</span> <span class="o">=</span> <span class="n">top_Pi_hat_descend_idx</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">top_Pi_hat_descend_idx</span> <span class="o">=</span> <span class="n">manual_sort</span><span class="p">(</span><span class="n">Pi_hat_seq</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(((</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_iters_to_keep</span><span class="p">))],</span>
+                                                         <span class="n">num_top_var_to_check</span><span class="p">,</span>
+                                                         <span class="bp">self</span><span class="o">.</span><span class="n">stopping_criteria_options</span><span class="p">[</span><span class="s2">&quot;tau_u&quot;</span><span class="p">])</span>
+                    <span class="n">stop_criterion_matrix</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(((</span><span class="n">stop_criterion_counter</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">num_last_iterations</span><span class="p">))]</span> <span class="o">=</span> <span class="n">top_Pi_hat_descend_idx</span>
+
+            <span class="c1"># check the stopping criterion after fully filled out the stop_criterion_matrix for the first time</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="o">&gt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">iter_to_start_checking_criterion</span> <span class="o">+</span> <span class="n">num_last_iterations</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">):</span>
+                <span class="n">unique_top_var_sets</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">stop_criterion_matrix</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">unique_top_var_sets</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">stop_criterion_met</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=== Number of unique set of top var in the last %.i iterations is %.i&quot;</span>
+                              <span class="o">%</span> <span class="p">(</span><span class="n">num_last_iterations</span><span class="p">,</span> <span class="n">unique_top_var_sets</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">max_k</span><span class="p">:</span>
+                <span class="n">continue_alg</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;==== Maximum number of iteration reached. ======&quot;</span><span class="p">)</span>
+                <span class="n">last_k</span> <span class="o">=</span> <span class="n">k</span>
+            <span class="k">elif</span> <span class="n">k</span> <span class="o">&gt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">iter_to_start_checking_criterion</span> <span class="o">+</span> <span class="n">num_last_iterations</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span> <span class="ow">and</span> <span class="n">stop_criterion_met</span><span class="p">:</span>
+                <span class="n">continue_alg</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=== Stopping criterion reached at k = &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
+                <span class="n">last_k</span> <span class="o">=</span> <span class="n">k</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;========= Currently finished iteration k = &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;=========&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">keep_all_iters</span><span class="p">:</span>
+            <span class="n">Pi_hat_last_k</span> <span class="o">=</span> <span class="n">Pi_hat_seq</span><span class="p">[:,</span> <span class="n">last_k</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">Pi_hat_last_k</span> <span class="o">=</span> <span class="n">Pi_hat_seq</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(((</span><span class="n">last_k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_iters_to_keep</span><span class="p">))]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">keep_all_iters</span><span class="p">:</span>
+            <span class="n">output_Pi_hat_seq</span> <span class="o">=</span> <span class="n">Pi_hat_seq</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:(</span><span class="n">last_k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+            <span class="n">output_Pi_hat_k_seq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="n">last_k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="c1"># clear memory</span>
+            <span class="n">Pi_hat_seq</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">last_k</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_iters_to_keep</span><span class="p">:</span>
+                <span class="n">output_Pi_hat_seq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">Pi_hat_seq</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">((</span><span class="n">last_k</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_iters_to_keep</span><span class="p">)):],</span>
+                                                    <span class="n">Pi_hat_seq</span><span class="p">[:,</span> <span class="p">:</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">((</span><span class="n">last_k</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_iters_to_keep</span><span class="p">))]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="c1"># clear memory</span>
+                <span class="n">Pi_hat_seq</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">output_Pi_hat_k_seq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">Pi_hat_k_seq</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">((</span><span class="n">last_k</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_iters_to_keep</span><span class="p">)):],</span>
+                                                      <span class="n">Pi_hat_k_seq</span><span class="p">[:</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">((</span><span class="n">last_k</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_iters_to_keep</span><span class="p">))]))</span>
+            <span class="k">else</span><span class="p">:</span>
+
+                <span class="n">output_Pi_hat_seq</span> <span class="o">=</span> <span class="n">Pi_hat_seq</span><span class="p">[:,</span> <span class="p">:</span><span class="n">last_k</span><span class="p">]</span>
+                <span class="n">output_Pi_hat_k_seq</span> <span class="o">=</span> <span class="n">Pi_hat_k_seq</span><span class="p">[:</span><span class="n">last_k</span><span class="p">]</span>
+                <span class="c1"># clear memory</span>
+                <span class="n">Pi_hat_seq</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">keep_all_iters</span><span class="p">:</span>
+            <span class="n">burn_in_length</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_k_</span> <span class="o">=</span> <span class="n">last_k</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Pi_hat_last_k_</span> <span class="o">=</span> <span class="n">Pi_hat_last_k</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">full_Pi_hat_seq_</span> <span class="o">=</span> <span class="n">output_Pi_hat_seq</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">full_Pi_hat_k_seq_</span> <span class="o">=</span> <span class="n">output_Pi_hat_k_seq</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">burn_in_length_</span> <span class="o">=</span> <span class="n">burn_in_length</span>
+
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+<div class="viewcode-block" id="AdaSTAMPS.get_support"><a class="viewcode-back" href="../../../generated/mplearn.feature_selection.AdaSTAMPS.html#mplearn.feature_selection.AdaSTAMPS.get_support">[docs]</a>    <span class="k">def</span> <span class="nf">get_support</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">pi_thr</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a mask, or integer index, of the features selected by the meta-algorithm.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        indices : bool, default=False</span>
+<span class="sd">            If True, the return value will be an array of integers, rather</span>
+<span class="sd">            than a boolean mask.</span>
+
+<span class="sd">        pi_thr : float, default=None</span>
+<span class="sd">            The selection frequency threshold above which a feature is considered selected.</span>
+<span class="sd">            A larger threshold indicates a more stringent criterion.</span>
+<span class="sd">            By default (`None`), a data-driven procedure is run to choose this threshold</span>
+<span class="sd">            automatically. This is generally recommended, however, this procedure might</span>
+<span class="sd">            take a long time if [# input features] is large (e.g. hundreds of thousands).</span>
+<span class="sd">            For many problems, setting this threshold to 0.5 is a reasonable choice.</span>
+<span class="sd">            Note that this threshold must be within (0.0, 1.0).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        support : array</span>
+<span class="sd">            If `indices` is `False`, this is a boolean array of shape</span>
+<span class="sd">            [# input features], in which an element is True iff its</span>
+<span class="sd">            corresponding feature is selected by the algorithm. If `indices` is</span>
+<span class="sd">            `True`, this is an integer array of shape [# output features] whose</span>
+<span class="sd">            values are indices into the input feature vector.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">check_is_fitted</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">error_msg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;pi_thr must be either None&quot;</span>
+            <span class="s2">&quot;or a float in (0.0, 1.0).&quot;</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">pi_thr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pi_thr</span> <span class="o">=</span> <span class="n">kde_based_pi_thr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Pi_hat_last_k_</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">pi_thr</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">pi_thr</span> <span class="o">&gt;</span> <span class="mf">1.0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
+
+        <span class="n">support_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Pi_hat_last_k_</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="n">support_</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">Pi_hat_last_k_</span> <span class="o">&lt;</span> <span class="n">pi_thr</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">return</span> <span class="n">support_</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">indices</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">support_</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="AdaSTAMPS.visualize_selection_frequency"><a class="viewcode-back" href="../../../generated/mplearn.feature_selection.AdaSTAMPS.html#mplearn.feature_selection.AdaSTAMPS.visualize_selection_frequency">[docs]</a>    <span class="k">def</span> <span class="nf">visualize_selection_frequency</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_features_to_plot</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Visualize the selection frequency of features</span>
+
+<span class="sd">        It is generally useful to visualize the selection frequency</span>
+<span class="sd">        of the input features versus number of iterations for better</span>
+<span class="sd">        insights into the estimated importance of the features.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        max_features_to_plot : int, default=None</span>
+<span class="sd">            Controls the maximum number of features whose selection frequency</span>
+<span class="sd">            over iterations are visualized. By default (&#39;None`),</span>
+<span class="sd">            all input features are shown. However, such visualization</span>
+<span class="sd">            might consume too much memory if the number of input feature</span>
+<span class="sd">            is too large (e.g. 5000). In such cases, consider setting</span>
+<span class="sd">            `max_features_to_plot` to be much smaller than n_features,</span>
+<span class="sd">            which will only plot a small fraction of features whose</span>
+<span class="sd">            selection frequency is below 0.3 to save on memory consumption.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">check_is_fitted</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">error_msg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;max_features_to_plot must be either None&quot;</span>
+            <span class="s2">&quot;or a positive integer in (0, M].&quot;</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">max_features_to_plot</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">max_features_to_plot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Pi_hat_last_k_</span><span class="o">.</span><span class="n">size</span>
+        <span class="k">elif</span> <span class="n">max_features_to_plot</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">max_features_to_plot</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Integral</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
+
+        <span class="n">visualize_selection_frequency_versus_iteration</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">full_Pi_hat_seq_</span><span class="p">,</span>
+                                                       <span class="bp">self</span><span class="o">.</span><span class="n">full_Pi_hat_k_seq_</span><span class="p">,</span>
+                                                       <span class="bp">self</span><span class="o">.</span><span class="n">burn_in_length_</span><span class="p">,</span>
+                                                       <span class="n">max_features_to_plot</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AdaSTAMPS.transform"><a class="viewcode-back" href="../../../generated/mplearn.feature_selection.AdaSTAMPS.html#mplearn.feature_selection.AdaSTAMPS.transform">[docs]</a>    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">pi_thr</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reduce X to the selected features.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X : ndarray of shape (n_samples, n_features)</span>
+<span class="sd">            The input samples. Note that data frame or sparse matrix format</span>
+<span class="sd">            are not allowed. Also, the dtype of X has to be numeric (e.g. float, int).</span>
+
+<span class="sd">        pi_thr : float, default=None</span>
+<span class="sd">            The selection frequency threshold above which a feature is considered selected.</span>
+<span class="sd">            See the documentations of `get_support` for details.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        X_r : ndarray of shape (n_samples, n_selected_features)</span>
+<span class="sd">            The input samples with only the selected features.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">check_is_fitted</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="n">mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_support</span><span class="p">(</span><span class="n">pi_thr</span><span class="o">=</span><span class="n">pi_thr</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">mask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;No features were selected: either the data is&quot;</span>
+                <span class="s2">&quot; too noisy or the selection threshold is too strict.&quot;</span><span class="p">,</span>
+                <span class="ne">UserWarning</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span> <span class="o">!=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;X has a different shape than during fitting.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">X</span><span class="p">[:,</span> <span class="n">safe_mask</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">mask</span><span class="p">)]</span></div></div>
+
+
+
+
+
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Tianyi Yao.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
