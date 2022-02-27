@@ -233,7 +233,6 @@ class MPGraph(BaseLearner):
     verbose : int, default=0.
         Controls the verbosity: the higher, more messages are displayed.
 
-
     Attributes
     ----------
     N_ : int
@@ -291,10 +290,12 @@ class MPGraph(BaseLearner):
     ----------
     .. [1] Yao, T. and Wang, M. and Allen, G. I., "Gaussian Graphical Model Selection for Huge Data
            via Minipatch Learning", arXiv:2110.12067.
+
     Examples
     --------
     The following example shows how to infer the structure of the
     Gaussian graphical model (sparsity pattern of the precision matrix) from observed data.
+
     >>> import numpy as np
     >>> from mplearn.graphical_model.base_graph import ThresholdedGraphicalLasso
     >>> from mplearn.graphical_model import MPGraph

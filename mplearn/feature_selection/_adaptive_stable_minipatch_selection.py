@@ -378,7 +378,6 @@ class AdaSTAMPS(BaseLearner):
     verbose : {0, 1, 2}
         Controls the verbosity: the higher, more messages are displayed.
 
-
     Attributes
     ----------
     last_k_ : int
@@ -429,10 +428,12 @@ class AdaSTAMPS(BaseLearner):
     ----------
     .. [1] Yao, T. and Allen, G. I., "Feature Selection for Huge Data via Minipatch Learning",
            arXiv:2010.08529.
+
     Examples
     --------
     The following example shows how to retrieve the 4 truly informative
     features in the sparse regression dataset.
+
     >>> from sklearn.datasets import make_sparse_uncorrelated
     >>> from mplearn.feature_selection.base_selector import ThresholdedOLS
     >>> from mplearn.feature_selection import AdaSTAMPS

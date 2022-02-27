@@ -46,11 +46,13 @@ class BaseLearner:
     def get_params(self, deep=True):
         """
         Get parameters for this estimator.
+
         Parameters
         ----------
         deep : bool, default=True
             If True, will return the parameters for this estimator and
             contained subobjects that are estimators.
+
         Returns
         -------
         params : dict
@@ -68,13 +70,16 @@ class BaseLearner:
     def set_params(self, **params):
         """
         Set the parameters of this estimator.
-        The method works on simple estimators as well as on nested objects. The latter have
-        parameters of the form ``<component>__<parameter>`` so that it's
+
+        The method works on simple estimators as well as on nested objects.
+        The latter have parameters of the form ``<component>__<parameter>`` so that it's
         possible to update each component of a nested object.
+
         Parameters
         ----------
         **params : dict
             Estimator parameters.
+
         Returns
         -------
         self : estimator instance
