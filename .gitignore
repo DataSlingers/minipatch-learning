@@ -8,6 +8,7 @@
 .idea/remote-mappings.xml
 .idea/vcs.xml
 .idea/.gitignore
+doc/generated
 resources.txt
 mplearn/__pycache__/__init__.cpython-37.pyc
 mplearn/__pycache__/_version.cpython-37.pyc
