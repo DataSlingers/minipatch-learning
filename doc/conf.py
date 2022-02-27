@@ -30,11 +30,12 @@ sys.path.insert(0, os.path.abspath('..'))
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
+    'numpydoc',
+    "sphinx-prompt",
     'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
     'sphinx.ext.viewcode',
     'sphinx_rtd_theme',
-    'numpydoc'
 ]
 
 # this is needed for some reason...
