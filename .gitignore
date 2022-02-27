@@ -21,3 +21,4 @@ mplearn/graphical_model/__pycache__/__init__.cpython-37.pyc
 mplearn/graphical_model/__pycache__/_minipatch_graph_selection.cpython-37.pyc
 mplearn/graphical_model/base_graph/__pycache__/__init__.cpython-37.pyc
 mplearn/graphical_model/base_graph/__pycache__/_base_graph.cpython-37.pyc
+.idea/workspace.xml
