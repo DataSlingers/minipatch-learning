@@ -3,16 +3,17 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>mplearn.graphical_model.base_graph.ThresholdedGraphicalLasso &mdash; minipatch-learning 0.1 documentation</title><link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <title>mplearn.graphical_model.base_graph.ThresholdedGraphicalLasso &mdash; minipatch-learning 0.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
-  <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
-        <script src="../_static/language_data.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -67,9 +68,9 @@
              
   <div class="section" id="mplearn-graphical-model-base-graph-thresholdedgraphicallasso">
 <h1><code class="xref py py-mod docutils literal notranslate"><span class="pre">mplearn.graphical_model.base_graph</span></code>.ThresholdedGraphicalLasso<a class="headerlink" href="#mplearn-graphical-model-base-graph-thresholdedgraphicallasso" title="Permalink to this headline"></a></h1>
-<dl class="class">
-<dt id="mplearn.graphical_model.base_graph.ThresholdedGraphicalLasso">
-<em class="property">class </em><code class="sig-prename descclassname">mplearn.graphical_model.base_graph.</code><code class="sig-name descname">ThresholdedGraphicalLasso</code><span class="sig-paren">(</span><em class="sig-param">*</em>, <em class="sig-param">lambda0_scale=1</em>, <em class="sig-param">threshold_seq=None</em>, <em class="sig-param">ebic_gamma=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mplearn/graphical_model/base_graph/_base_graph.html#ThresholdedGraphicalLasso"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mplearn.graphical_model.base_graph.ThresholdedGraphicalLasso" title="Permalink to this definition"></a></dt>
+<dl class="py class">
+<dt class="sig sig-object py" id="mplearn.graphical_model.base_graph.ThresholdedGraphicalLasso">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mplearn.graphical_model.base_graph.</span></span><span class="sig-name descname"><span class="pre">ThresholdedGraphicalLasso</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lambda0_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold_seq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ebic_gamma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mplearn/graphical_model/base_graph/_base_graph.html#ThresholdedGraphicalLasso"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mplearn.graphical_model.base_graph.ThresholdedGraphicalLasso" title="Permalink to this definition"></a></dt>
 <dd><p>Gaussian graphical model selection with the Thresholded Graphical Lasso estimator.</p>
 <p>This class is designed to be used as a base graph selector on
 the minipatches with the <code class="docutils literal notranslate"><span class="pre">minipatch_graphical_model.MPGraph</span></code> class.
@@ -100,30 +101,28 @@ needs to be larger than or equal to 0.</p>
 </dd>
 </dl>
 </dd>
-</dl>
-<p class="rubric">References</p>
-<dl class="citation">
-<dt class="label" id="r0e337988859b-1"><span class="brackets">R0e337988859b-1</span></dt>
-<dd><p>Yao, T. and Wang, M. and Allen, G. I., “Gaussian Graphical Model Selection for Huge Data
-via Minipatch Learning”, arXiv:2110.12067.</p>
-</dd>
-<dt class="label" id="r0e337988859b-2"><span class="brackets">R0e337988859b-2</span></dt>
-<dd><p>Foygel, R. and Drton, M., “Extended Bayesian Information Criteria for Gaussian
-Graphical Models”, Neural Information Processing Systems 2010.</p>
-</dd>
-</dl>
-<dl class="field-list simple">
-<dt class="field-odd">Attributes</dt>
-<dd class="field-odd"><dl class="simple">
+<dt class="field-even">Attributes</dt>
+<dd class="field-even"><dl class="simple">
 <dt><strong>Theta_tilde_</strong><span class="classifier">ndarray of shape (n_features, n_features)</span></dt><dd><p>The final precision matrix estimate corresponding to the thresholded graph
 with the best EBIC score.</p>
 </dd>
 </dl>
 </dd>
 </dl>
-<dl class="method">
-<dt id="mplearn.graphical_model.base_graph.ThresholdedGraphicalLasso.fit">
-<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">X</em>, <em class="sig-param">y=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mplearn/graphical_model/base_graph/_base_graph.html#ThresholdedGraphicalLasso.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mplearn.graphical_model.base_graph.ThresholdedGraphicalLasso.fit" title="Permalink to this definition"></a></dt>
+<p class="rubric">References</p>
+<dl class="citation">
+<dt class="label" id="r0e337988859b-1"><span class="brackets">1</span></dt>
+<dd><p>Yao, T. and Wang, M. and Allen, G. I., “Gaussian Graphical Model Selection for Huge Data
+via Minipatch Learning”, arXiv:2110.12067.</p>
+</dd>
+<dt class="label" id="r0e337988859b-2"><span class="brackets">2</span></dt>
+<dd><p>Foygel, R. and Drton, M., “Extended Bayesian Information Criteria for Gaussian
+Graphical Models”, Neural Information Processing Systems 2010.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="mplearn.graphical_model.base_graph.ThresholdedGraphicalLasso.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mplearn/graphical_model/base_graph/_base_graph.html#ThresholdedGraphicalLasso.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mplearn.graphical_model.base_graph.ThresholdedGraphicalLasso.fit" title="Permalink to this definition"></a></dt>
 <dd><p>Fit the Thresholded Graphical Lasso model to X.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -143,38 +142,46 @@ with the best EBIC score.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
-<dt id="mplearn.graphical_model.base_graph.ThresholdedGraphicalLasso.get_params">
-<code class="sig-name descname">get_params</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">deep=True</em><span class="sig-paren">)</span><a class="headerlink" href="#mplearn.graphical_model.base_graph.ThresholdedGraphicalLasso.get_params" title="Permalink to this definition"></a></dt>
-<dd><p>Get parameters for this estimator.
-Parameters
-———-
-deep : bool, default=True</p>
-<blockquote>
-<div><p>If True, will return the parameters for this estimator and
+<dl class="py method">
+<dt class="sig sig-object py" id="mplearn.graphical_model.base_graph.ThresholdedGraphicalLasso.get_params">
+<span class="sig-name descname"><span class="pre">get_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">deep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mplearn.graphical_model.base_graph.ThresholdedGraphicalLasso.get_params" title="Permalink to this definition"></a></dt>
+<dd><p>Get parameters for this estimator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>deep</strong><span class="classifier">bool, default=True</span></dt><dd><p>If True, will return the parameters for this estimator and
 contained subobjects that are estimators.</p>
-</div></blockquote>
-<dl class="simple">
-<dt>params<span class="classifier">dict</span></dt><dd><p>Parameter names mapped to their values.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>params</strong><span class="classifier">dict</span></dt><dd><p>Parameter names mapped to their values.</p>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd></dl>
 
-<dl class="method">
-<dt id="mplearn.graphical_model.base_graph.ThresholdedGraphicalLasso.set_params">
-<code class="sig-name descname">set_params</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">**params</em><span class="sig-paren">)</span><a class="headerlink" href="#mplearn.graphical_model.base_graph.ThresholdedGraphicalLasso.set_params" title="Permalink to this definition"></a></dt>
-<dd><p>Set the parameters of this estimator.
-The method works on simple estimators as well as on nested objects. The latter have
-parameters of the form <code class="docutils literal notranslate"><span class="pre">&lt;component&gt;__&lt;parameter&gt;</span></code> so that it’s
-possible to update each component of a nested object.
-Parameters
-———-
-<a href="#id3"><span class="problematic" id="id4">**</span></a>params : dict</p>
-<blockquote>
-<div><p>Estimator parameters.</p>
-</div></blockquote>
-<dl class="simple">
-<dt>self<span class="classifier">estimator instance</span></dt><dd><p>Estimator instance.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mplearn.graphical_model.base_graph.ThresholdedGraphicalLasso.set_params">
+<span class="sig-name descname"><span class="pre">set_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mplearn.graphical_model.base_graph.ThresholdedGraphicalLasso.set_params" title="Permalink to this definition"></a></dt>
+<dd><p>Set the parameters of this estimator.</p>
+<p>The method works on simple estimators as well as on nested objects.
+The latter have parameters of the form <code class="docutils literal notranslate"><span class="pre">&lt;component&gt;__&lt;parameter&gt;</span></code> so that it’s
+possible to update each component of a nested object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>**params</strong><span class="classifier">dict</span></dt><dd><p>Estimator parameters.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>self</strong><span class="classifier">estimator instance</span></dt><dd><p>Estimator instance.</p>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd></dl>

@@ -111,11 +111,13 @@
     <span class="k">def</span> <span class="nf">get_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get parameters for this estimator.</span>
+
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        deep : bool, default=True</span>
 <span class="sd">            If True, will return the parameters for this estimator and</span>
 <span class="sd">            contained subobjects that are estimators.</span>
+
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        params : dict</span>
@@ -133,13 +135,16 @@
     <span class="k">def</span> <span class="nf">set_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the parameters of this estimator.</span>
-<span class="sd">        The method works on simple estimators as well as on nested objects. The latter have</span>
-<span class="sd">        parameters of the form ``&lt;component&gt;__&lt;parameter&gt;`` so that it&#39;s</span>
+
+<span class="sd">        The method works on simple estimators as well as on nested objects.</span>
+<span class="sd">        The latter have parameters of the form ``&lt;component&gt;__&lt;parameter&gt;`` so that it&#39;s</span>
 <span class="sd">        possible to update each component of a nested object.</span>
+
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        **params : dict</span>
 <span class="sd">            Estimator parameters.</span>
+
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        self : estimator instance</span>

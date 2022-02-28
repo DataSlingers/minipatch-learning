@@ -3,16 +3,17 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>mplearn.feature_selection.AdaSTAMPS &mdash; minipatch-learning 0.1 documentation</title><link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <title>mplearn.feature_selection.AdaSTAMPS &mdash; minipatch-learning 0.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
-  <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
-        <script src="../_static/language_data.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -67,9 +68,9 @@
              
   <div class="section" id="mplearn-feature-selection-adastamps">
 <h1><a class="reference internal" href="../api.html#module-mplearn.feature_selection" title="mplearn.feature_selection"><code class="xref py py-mod docutils literal notranslate"><span class="pre">mplearn.feature_selection</span></code></a>.AdaSTAMPS<a class="headerlink" href="#mplearn-feature-selection-adastamps" title="Permalink to this headline"></a></h1>
-<dl class="class">
-<dt id="mplearn.feature_selection.AdaSTAMPS">
-<em class="property">class </em><code class="sig-prename descclassname">mplearn.feature_selection.</code><code class="sig-name descname">AdaSTAMPS</code><span class="sig-paren">(</span><em class="sig-param">base_selector</em>, <em class="sig-param">*</em>, <em class="sig-param">minipatch_m_ratio=0.05</em>, <em class="sig-param">minipatch_n_ratio=0.5</em>, <em class="sig-param">sampling_options=None</em>, <em class="sig-param">stopping_criteria_options=None</em>, <em class="sig-param">random_state=0</em>, <em class="sig-param">keep_all_iters=True</em>, <em class="sig-param">max_iters_to_keep=None</em>, <em class="sig-param">verbose=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mplearn/feature_selection/_adaptive_stable_minipatch_selection.html#AdaSTAMPS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mplearn.feature_selection.AdaSTAMPS" title="Permalink to this definition"></a></dt>
+<dl class="py class">
+<dt class="sig sig-object py" id="mplearn.feature_selection.AdaSTAMPS">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mplearn.feature_selection.</span></span><span class="sig-name descname"><span class="pre">AdaSTAMPS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_selector</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minipatch_m_ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minipatch_n_ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampling_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stopping_criteria_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_all_iters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iters_to_keep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mplearn/feature_selection/_adaptive_stable_minipatch_selection.html#AdaSTAMPS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mplearn.feature_selection.AdaSTAMPS" title="Permalink to this definition"></a></dt>
 <dd><p>Feature selection with Adaptive Stable Minipatch Selection.</p>
 <p>This is a meta-algorithm that repeatedly fits base feature selectors to many
 random or adaptively chosen subsets of both observations and features (minipatches)
@@ -197,6 +198,25 @@ default when <code class="docutils literal notranslate"><span class="pre">max_it
 </dd>
 </dl>
 </dd>
+<dt class="field-even">Attributes</dt>
+<dd class="field-even"><dl>
+<dt><strong>last_k_</strong><span class="classifier">int</span></dt><dd><p>The total number of iterations for which the meta-algorithm has run.</p>
+</dd>
+<dt><strong>Pi_hat_last_k_</strong><span class="classifier">array of shape (n_features, )</span></dt><dd><p>The final selection frequency for each of the input features. Each element is in the interval [0.0, 1.0].
+A larger value indicates that the corresponding feature is more informative, vice versa.</p>
+</dd>
+<dt><strong>full_Pi_hat_seq_</strong><span class="classifier">array of shape (n_features, <code class="docutils literal notranslate"><span class="pre">last_k_</span></code>) or (n_features, <code class="docutils literal notranslate"><span class="pre">max_iters_to_keep</span></code>)</span></dt><dd><p>If <code class="docutils literal notranslate"><span class="pre">keep_all_iters</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code>, then this is an array of shape (n_features, <code class="docutils literal notranslate"><span class="pre">last_k_</span></code>) containing
+the selection frequency of all input features from first iteration to the last. If <code class="docutils literal notranslate"><span class="pre">keep_all_iters</span></code>
+is <code class="docutils literal notranslate"><span class="pre">False</span></code>, then this is an array of shape (n_features, <code class="docutils literal notranslate"><span class="pre">max_iters_to_keep</span></code>) containing the
+selection frequency of all input features for the last <code class="docutils literal notranslate"><span class="pre">max_iters_to_keep</span></code> iterations.</p>
+</dd>
+<dt><strong>full_Pi_hat_k_seq_</strong><span class="classifier">array of shape (<code class="docutils literal notranslate"><span class="pre">last_k_</span></code>, ) or (<code class="docutils literal notranslate"><span class="pre">max_iters_to_keep</span></code>, )</span></dt><dd><p>This contains the iteration numbers corresponding to the columns of <code class="docutils literal notranslate"><span class="pre">full_Pi_hat_seq_</span></code>.</p>
+</dd>
+<dt><strong>burn_in_length_</strong><span class="classifier">int</span></dt><dd><p>The total number of iterations spent in the burn-in stage. If <code class="docutils literal notranslate"><span class="pre">'mode'</span></code> of <code class="docutils literal notranslate"><span class="pre">sampling_options</span></code>
+is set to ‘uniform’ or if <code class="docutils literal notranslate"><span class="pre">keep_all_iters</span></code> is <code class="docutils literal notranslate"><span class="pre">False</span></code>, this is set to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+</dd>
+</dl>
+</dd>
 </dl>
 <p class="rubric">Notes</p>
 <ul class="simple">
@@ -224,54 +244,36 @@ sampling procedures and the stopping rule.</p></li>
 </ul>
 <p class="rubric">References</p>
 <dl class="citation">
-<dt class="label" id="rd4534dbd4ccf-1"><span class="brackets">Rd4534dbd4ccf-1</span></dt>
+<dt class="label" id="rd4534dbd4ccf-1"><span class="brackets">1</span></dt>
 <dd><p>Yao, T. and Allen, G. I., “Feature Selection for Huge Data via Minipatch Learning”,
 arXiv:2010.08529.</p>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
 <p>The following example shows how to retrieve the 4 truly informative
-features in the sparse regression dataset.
-&gt;&gt;&gt; from sklearn.datasets import make_sparse_uncorrelated
-&gt;&gt;&gt; from mplearn.feature_selection.base_selector import ThresholdedOLS
-&gt;&gt;&gt; from mplearn.feature_selection import AdaSTAMPS
-&gt;&gt;&gt; X, y = make_sparse_uncorrelated(n_samples=100, n_features=10, random_state=0)
-&gt;&gt;&gt; thresholded_ols = ThresholdedOLS(num_features_to_select=None, screening_thresh=None)
-&gt;&gt;&gt; selector = AdaSTAMPS(base_selector=thresholded_ols,
-…                      minipatch_m_ratio=0.5,
-…                      minipatch_n_ratio=0.5,
-…                      random_state=123,
-…                      verbose=0)
-&gt;&gt;&gt; fitted_selector = selector.fit(X, y)
-&gt;&gt;&gt; fitted_selector.get_support(indices=True, pi_thr=0.5)
-array([0, 1, 2, 3])
-&gt;&gt;&gt; X_new = fitted_selector.transform(X, pi_thr=0.5)
-&gt;&gt;&gt; X_new.shape
-(100, 4)
-&gt;&gt;&gt; fitted_selector.visualize_selection_frequency(max_features_to_plot=None)  # doctest: +SKIP</p>
-<dl class="field-list">
-<dt class="field-odd">Attributes</dt>
-<dd class="field-odd"><dl>
-<dt><strong>last_k_</strong><span class="classifier">int</span></dt><dd><p>The total number of iterations for which the meta-algorithm has run.</p>
-</dd>
-<dt><strong>Pi_hat_last_k_</strong><span class="classifier">array of shape (n_features, )</span></dt><dd><p>The final selection frequency for each of the input features. Each element is in the interval [0.0, 1.0].
-A larger value indicates that the corresponding feature is more informative, vice versa.</p>
-</dd>
-<dt><strong>full_Pi_hat_seq_</strong><span class="classifier">array of shape (n_features, <code class="docutils literal notranslate"><span class="pre">last_k_</span></code>) or (n_features, <code class="docutils literal notranslate"><span class="pre">max_iters_to_keep</span></code>)</span></dt><dd><p>If <code class="docutils literal notranslate"><span class="pre">keep_all_iters</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code>, then this is an array of shape (n_features, <code class="docutils literal notranslate"><span class="pre">last_k_</span></code>) containing
-the selection frequency of all input features from first iteration to the last. If <code class="docutils literal notranslate"><span class="pre">keep_all_iters</span></code>
-is <code class="docutils literal notranslate"><span class="pre">False</span></code>, then this is an array of shape (n_features, <code class="docutils literal notranslate"><span class="pre">max_iters_to_keep</span></code>) containing the
-selection frequency of all input features for the last <code class="docutils literal notranslate"><span class="pre">max_iters_to_keep</span></code> iterations.</p>
-</dd>
-<dt><strong>full_Pi_hat_k_seq_</strong><span class="classifier">array of shape (<code class="docutils literal notranslate"><span class="pre">last_k_</span></code>, ) or (<code class="docutils literal notranslate"><span class="pre">max_iters_to_keep</span></code>, )</span></dt><dd><p>This contains the iteration numbers corresponding to the columns of <code class="docutils literal notranslate"><span class="pre">full_Pi_hat_seq_</span></code>.</p>
-</dd>
-<dt><strong>burn_in_length_</strong><span class="classifier">int</span></dt><dd><p>The total number of iterations spent in the burn-in stage. If <code class="docutils literal notranslate"><span class="pre">'mode'</span></code> of <code class="docutils literal notranslate"><span class="pre">sampling_options</span></code>
-is set to ‘uniform’ or if <code class="docutils literal notranslate"><span class="pre">keep_all_iters</span></code> is <code class="docutils literal notranslate"><span class="pre">False</span></code>, this is set to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<dl class="method">
-<dt id="mplearn.feature_selection.AdaSTAMPS.fit">
-<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">X</em>, <em class="sig-param">y</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mplearn/feature_selection/_adaptive_stable_minipatch_selection.html#AdaSTAMPS.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mplearn.feature_selection.AdaSTAMPS.fit" title="Permalink to this definition"></a></dt>
+features in the sparse regression dataset.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">make_sparse_uncorrelated</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">mplearn.feature_selection.base_selector</span> <span class="kn">import</span> <span class="n">ThresholdedOLS</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">mplearn.feature_selection</span> <span class="kn">import</span> <span class="n">AdaSTAMPS</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">make_sparse_uncorrelated</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">n_features</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">thresholded_ols</span> <span class="o">=</span> <span class="n">ThresholdedOLS</span><span class="p">(</span><span class="n">num_features_to_select</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">screening_thresh</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">selector</span> <span class="o">=</span> <span class="n">AdaSTAMPS</span><span class="p">(</span><span class="n">base_selector</span><span class="o">=</span><span class="n">thresholded_ols</span><span class="p">,</span>
+<span class="gp">... </span>                     <span class="n">minipatch_m_ratio</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+<span class="gp">... </span>                     <span class="n">minipatch_n_ratio</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+<span class="gp">... </span>                     <span class="n">random_state</span><span class="o">=</span><span class="mi">123</span><span class="p">,</span>
+<span class="gp">... </span>                     <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fitted_selector</span> <span class="o">=</span> <span class="n">selector</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fitted_selector</span><span class="o">.</span><span class="n">get_support</span><span class="p">(</span><span class="n">indices</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">pi_thr</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="go">array([0, 1, 2, 3])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_new</span> <span class="o">=</span> <span class="n">fitted_selector</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">pi_thr</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_new</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(100, 4)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fitted_selector</span><span class="o">.</span><span class="n">visualize_selection_frequency</span><span class="p">(</span><span class="n">max_features_to_plot</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>  
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="mplearn.feature_selection.AdaSTAMPS.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mplearn/feature_selection/_adaptive_stable_minipatch_selection.html#AdaSTAMPS.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mplearn.feature_selection.AdaSTAMPS.fit" title="Permalink to this definition"></a></dt>
 <dd><p>Fit the AdaSTAMPS model to data.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -297,26 +299,30 @@ class names (<code class="docutils literal notranslate"><span class="pre">str</s
 <p>Allows NaN/Inf in the input if the underlying estimator does as well.</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="mplearn.feature_selection.AdaSTAMPS.get_params">
-<code class="sig-name descname">get_params</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">deep=True</em><span class="sig-paren">)</span><a class="headerlink" href="#mplearn.feature_selection.AdaSTAMPS.get_params" title="Permalink to this definition"></a></dt>
-<dd><p>Get parameters for this estimator.
-Parameters
-———-
-deep : bool, default=True</p>
-<blockquote>
-<div><p>If True, will return the parameters for this estimator and
+<dl class="py method">
+<dt class="sig sig-object py" id="mplearn.feature_selection.AdaSTAMPS.get_params">
+<span class="sig-name descname"><span class="pre">get_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">deep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mplearn.feature_selection.AdaSTAMPS.get_params" title="Permalink to this definition"></a></dt>
+<dd><p>Get parameters for this estimator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>deep</strong><span class="classifier">bool, default=True</span></dt><dd><p>If True, will return the parameters for this estimator and
 contained subobjects that are estimators.</p>
-</div></blockquote>
-<dl class="simple">
-<dt>params<span class="classifier">dict</span></dt><dd><p>Parameter names mapped to their values.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>params</strong><span class="classifier">dict</span></dt><dd><p>Parameter names mapped to their values.</p>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd></dl>
 
-<dl class="method">
-<dt id="mplearn.feature_selection.AdaSTAMPS.get_support">
-<code class="sig-name descname">get_support</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">indices=False</em>, <em class="sig-param">pi_thr=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mplearn/feature_selection/_adaptive_stable_minipatch_selection.html#AdaSTAMPS.get_support"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mplearn.feature_selection.AdaSTAMPS.get_support" title="Permalink to this definition"></a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="mplearn.feature_selection.AdaSTAMPS.get_support">
+<span class="sig-name descname"><span class="pre">get_support</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pi_thr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mplearn/feature_selection/_adaptive_stable_minipatch_selection.html#AdaSTAMPS.get_support"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mplearn.feature_selection.AdaSTAMPS.get_support" title="Permalink to this definition"></a></dt>
 <dd><p>Get a mask, or integer index, of the features selected by the meta-algorithm.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -347,28 +353,32 @@ values are indices into the input feature vector.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
-<dt id="mplearn.feature_selection.AdaSTAMPS.set_params">
-<code class="sig-name descname">set_params</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">**params</em><span class="sig-paren">)</span><a class="headerlink" href="#mplearn.feature_selection.AdaSTAMPS.set_params" title="Permalink to this definition"></a></dt>
-<dd><p>Set the parameters of this estimator.
-The method works on simple estimators as well as on nested objects. The latter have
-parameters of the form <code class="docutils literal notranslate"><span class="pre">&lt;component&gt;__&lt;parameter&gt;</span></code> so that it’s
-possible to update each component of a nested object.
-Parameters
-———-
-<a href="#id2"><span class="problematic" id="id3">**</span></a>params : dict</p>
-<blockquote>
-<div><p>Estimator parameters.</p>
-</div></blockquote>
-<dl class="simple">
-<dt>self<span class="classifier">estimator instance</span></dt><dd><p>Estimator instance.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mplearn.feature_selection.AdaSTAMPS.set_params">
+<span class="sig-name descname"><span class="pre">set_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mplearn.feature_selection.AdaSTAMPS.set_params" title="Permalink to this definition"></a></dt>
+<dd><p>Set the parameters of this estimator.</p>
+<p>The method works on simple estimators as well as on nested objects.
+The latter have parameters of the form <code class="docutils literal notranslate"><span class="pre">&lt;component&gt;__&lt;parameter&gt;</span></code> so that it’s
+possible to update each component of a nested object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>**params</strong><span class="classifier">dict</span></dt><dd><p>Estimator parameters.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>self</strong><span class="classifier">estimator instance</span></dt><dd><p>Estimator instance.</p>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd></dl>
 
-<dl class="method">
-<dt id="mplearn.feature_selection.AdaSTAMPS.transform">
-<code class="sig-name descname">transform</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">X</em>, <em class="sig-param">pi_thr=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mplearn/feature_selection/_adaptive_stable_minipatch_selection.html#AdaSTAMPS.transform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mplearn.feature_selection.AdaSTAMPS.transform" title="Permalink to this definition"></a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="mplearn.feature_selection.AdaSTAMPS.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pi_thr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mplearn/feature_selection/_adaptive_stable_minipatch_selection.html#AdaSTAMPS.transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mplearn.feature_selection.AdaSTAMPS.transform" title="Permalink to this definition"></a></dt>
 <dd><p>Reduce X to the selected features.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -390,9 +400,9 @@ See the documentations of <code class="docutils literal notranslate"><span class
 </dl>
 </dd></dl>
 
-<dl class="method">
-<dt id="mplearn.feature_selection.AdaSTAMPS.visualize_selection_frequency">
-<code class="sig-name descname">visualize_selection_frequency</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">max_features_to_plot=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mplearn/feature_selection/_adaptive_stable_minipatch_selection.html#AdaSTAMPS.visualize_selection_frequency"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mplearn.feature_selection.AdaSTAMPS.visualize_selection_frequency" title="Permalink to this definition"></a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="mplearn.feature_selection.AdaSTAMPS.visualize_selection_frequency">
+<span class="sig-name descname"><span class="pre">visualize_selection_frequency</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_features_to_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mplearn/feature_selection/_adaptive_stable_minipatch_selection.html#AdaSTAMPS.visualize_selection_frequency"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mplearn.feature_selection.AdaSTAMPS.visualize_selection_frequency" title="Permalink to this definition"></a></dt>
 <dd><p>Visualize the selection frequency of features</p>
 <p>It is generally useful to visualize the selection frequency
 of the input features versus number of iterations for better

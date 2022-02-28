@@ -443,7 +443,6 @@
 <span class="sd">    verbose : {0, 1, 2}</span>
 <span class="sd">        Controls the verbosity: the higher, more messages are displayed.</span>
 
-
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
 <span class="sd">    last_k_ : int</span>
@@ -494,10 +493,12 @@
 <span class="sd">    ----------</span>
 <span class="sd">    .. [1] Yao, T. and Allen, G. I., &quot;Feature Selection for Huge Data via Minipatch Learning&quot;,</span>
 <span class="sd">           arXiv:2010.08529.</span>
+
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
 <span class="sd">    The following example shows how to retrieve the 4 truly informative</span>
 <span class="sd">    features in the sparse regression dataset.</span>
+
 <span class="sd">    &gt;&gt;&gt; from sklearn.datasets import make_sparse_uncorrelated</span>
 <span class="sd">    &gt;&gt;&gt; from mplearn.feature_selection.base_selector import ThresholdedOLS</span>
 <span class="sd">    &gt;&gt;&gt; from mplearn.feature_selection import AdaSTAMPS</span>
