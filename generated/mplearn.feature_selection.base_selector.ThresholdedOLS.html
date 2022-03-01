@@ -73,7 +73,7 @@
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mplearn.feature_selection.base_selector.</span></span><span class="sig-name descname"><span class="pre">ThresholdedOLS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_features_to_select</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">screening_thresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mplearn/feature_selection/base_selector/_base_selector.html#ThresholdedOLS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mplearn.feature_selection.base_selector.ThresholdedOLS" title="Permalink to this definition"></a></dt>
 <dd><p>Feature selection with the Thresholded OLS selector.</p>
 <p>This class is designed to be used as a base feature selector on
-the minipatches with the <code class="docutils literal notranslate"><span class="pre">minipatch_feature_selection.AdaSTAMPS</span></code> class.</p>
+the minipatches with the <code class="docutils literal notranslate"><span class="pre">mplearn.feature_selection.AdaSTAMPS</span></code> class.</p>
 <dl class="field-list">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -91,20 +91,20 @@ of the m features in a minipatch to select.</p></li>
 <dt><strong>screening_thresh</strong><span class="classifier">float, default=None</span></dt><dd><p>This is ignored if the minipatch has more observations n
 than features m. For high-dimensional minipatches (n&lt;m),
 <code class="docutils literal notranslate"><span class="pre">screening_thresh</span></code> should be a float in the interval (0.0, 1.0),
-which will first applying an efficient screening rule to reduce
+which will first apply an efficient screening rule from [1] to reduce
 the number of features in the minipatch to <code class="docutils literal notranslate"><span class="pre">round(screening_thresh</span> <span class="pre">*</span> <span class="pre">n)</span></code>.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Attributes</dt>
 <dd class="field-even"><dl>
-<dt><strong>selection_indicator_</strong><span class="classifier">array of shape (m or <code class="docutils literal notranslate"><span class="pre">round(screening_thresh</span> <span class="pre">*</span> <span class="pre">n)</span></code>, )</span></dt><dd><p>A binary selection indicator for the features in the minipatch
+<dt><strong>selection_indicator_</strong><span class="classifier">ndarray of shape (m,) or (<code class="docutils literal notranslate"><span class="pre">round(screening_thresh</span> <span class="pre">*</span> <span class="pre">n)</span></code>,)</span></dt><dd><p>A binary selection indicator for the features in the minipatch
 (1 for selected features and 0 for unselected features). If low-dimensional
-minipatch (n&gt;m), the shape is m. Otherwise, the shape is <code class="docutils literal notranslate"><span class="pre">round(screening_thresh</span> <span class="pre">*</span> <span class="pre">n)</span></code>.</p>
+minipatch (n&gt;m), the shape is (m,). Otherwise, the shape is (<code class="docutils literal notranslate"><span class="pre">round(screening_thresh</span> <span class="pre">*</span> <span class="pre">n)</span></code>,).</p>
 </dd>
-<dt><strong>Fk_</strong><span class="classifier">array of shape (m or <code class="docutils literal notranslate"><span class="pre">round(screening_thresh</span> <span class="pre">*</span> <span class="pre">n)</span></code>, )</span></dt><dd><p>The corresponding feature indices of the features in <code class="docutils literal notranslate"><span class="pre">selection_indicator_</span></code>.
+<dt><strong>Fk_</strong><span class="classifier">ndarray of shape (m,) or (<code class="docutils literal notranslate"><span class="pre">round(screening_thresh</span> <span class="pre">*</span> <span class="pre">n)</span></code>,)</span></dt><dd><p>The corresponding integer indices of the features in <code class="docutils literal notranslate"><span class="pre">selection_indicator_</span></code>.
 Note that these indices correspond to these features’ column indices
-in the full data X_full.</p>
+in the full data X_full (N observations and M features).</p>
 </dd>
 </dl>
 </dd>
@@ -128,7 +128,7 @@ high-dimensional regression models.” Electron. J. Statist.
 </dd>
 <dt><strong>y</strong><span class="classifier">ndarray of shape (n,)</span></dt><dd><p>The target values corresponding to the minipatch.</p>
 </dd>
-<dt><strong>Fk</strong><span class="classifier">array of shape (m, )</span></dt><dd><p>The feature indices of the features in the minipatch.
+<dt><strong>Fk</strong><span class="classifier">ndarray of shape (m,)</span></dt><dd><p>The integer indices of the features in the minipatch.
 Note that these indices correspond to these features’ column indices
 in the full data X_full. For example, <code class="docutils literal notranslate"><span class="pre">X</span> <span class="pre">=</span> <span class="pre">X_full[:,</span> <span class="pre">F_k]</span></code>.</p>
 </dd>

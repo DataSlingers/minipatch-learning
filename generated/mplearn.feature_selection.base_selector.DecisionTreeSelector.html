@@ -70,10 +70,10 @@
 <h1><code class="xref py py-mod docutils literal notranslate"><span class="pre">mplearn.feature_selection.base_selector</span></code>.DecisionTreeSelector<a class="headerlink" href="#mplearn-feature-selection-base-selector-decisiontreeselector" title="Permalink to this headline"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="mplearn.feature_selection.base_selector.DecisionTreeSelector">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mplearn.feature_selection.base_selector.</span></span><span class="sig-name descname"><span class="pre">DecisionTreeSelector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'classifier'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">criterion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gini'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_features_to_select</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">123</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mplearn/feature_selection/base_selector/_base_selector.html#DecisionTreeSelector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mplearn.feature_selection.base_selector.DecisionTreeSelector" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mplearn.feature_selection.base_selector.</span></span><span class="sig-name descname"><span class="pre">DecisionTreeSelector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'classifier'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">criterion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gini'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_features_to_select</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mplearn/feature_selection/base_selector/_base_selector.html#DecisionTreeSelector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mplearn.feature_selection.base_selector.DecisionTreeSelector" title="Permalink to this definition"></a></dt>
 <dd><p>Feature selection with the decision tree selector.</p>
 <p>This class is designed to be used as a base feature selector on
-the minipatches with the <code class="docutils literal notranslate"><span class="pre">minipatch_feature_selection.AdaSTAMPS</span></code> class.
+the minipatches with the <code class="docutils literal notranslate"><span class="pre">mplearn.feature_selection.AdaSTAMPS</span></code> class.
 This is a wrapper built around the DecisionTreeClassifier and the
 DecisionTreeRegressor from the sklearn package.</p>
 <dl class="field-list simple">
@@ -97,18 +97,18 @@ features to select on a minipatch.</p></li>
 of the m features in a minipatch to select.</p></li>
 </ul>
 </dd>
-<dt><strong>random_state</strong><span class="classifier">int, default=123</span></dt><dd><p>Controls the randomness of the decision tree model.</p>
+<dt><strong>random_state</strong><span class="classifier">int, default=0</span></dt><dd><p>Controls the randomness of the decision tree model.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Attributes</dt>
 <dd class="field-even"><dl class="simple">
-<dt><strong>selection_indicator_</strong><span class="classifier">array of shape (m, )</span></dt><dd><p>A binary selection indicator for the features in the minipatch
+<dt><strong>selection_indicator_</strong><span class="classifier">ndarray of shape (m,)</span></dt><dd><p>A binary selection indicator for the features in the minipatch
 (1 for selected features and 0 for unselected features).</p>
 </dd>
-<dt><strong>Fk_</strong><span class="classifier">array of shape (m, )</span></dt><dd><p>The corresponding feature indices of the features in <code class="docutils literal notranslate"><span class="pre">selection_indicator_</span></code>.
+<dt><strong>Fk_</strong><span class="classifier">ndarray of shape (m,)</span></dt><dd><p>The corresponding integer indices of the features in <code class="docutils literal notranslate"><span class="pre">selection_indicator_</span></code>.
 Note that these indices correspond to these features’ column indices
-in the full data X_full.</p>
+in the full data X_full (N observations and M features).</p>
 </dd>
 </dl>
 </dd>
@@ -124,7 +124,7 @@ in the full data X_full.</p>
 </dd>
 <dt><strong>y</strong><span class="classifier">ndarray of shape (n,)</span></dt><dd><p>The target values corresponding to the minipatch.</p>
 </dd>
-<dt><strong>Fk</strong><span class="classifier">array of shape (m, )</span></dt><dd><p>The feature indices of the features in the minipatch.
+<dt><strong>Fk</strong><span class="classifier">ndarray of shape (m,)</span></dt><dd><p>The integer indices of the features in the minipatch.
 Note that these indices correspond to these features’ column indices
 in the full data X_full. For example, <code class="docutils literal notranslate"><span class="pre">X</span> <span class="pre">=</span> <span class="pre">X_full[:,</span> <span class="pre">F_k]</span></code>.</p>
 </dd>

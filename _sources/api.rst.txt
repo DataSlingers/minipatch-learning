@@ -12,7 +12,7 @@ Feature Selection
    :no-members:
    :no-inherited-members:
 
-Here is the API documentation of the minipatch feature selection part of the package.
+The following is the API documentation for the feature selection algorithms in the package.
 
 .. currentmodule:: mplearn
 
@@ -42,7 +42,7 @@ Gaussian Graphical Model Selection
    :no-members:
    :no-inherited-members:
 
-Here is the API documentation of the minipatch graphical model part of the package.
+The following is the API documentation for the Gaussian graphical model estimators in the package.
 
 .. currentmodule:: mplearn
 

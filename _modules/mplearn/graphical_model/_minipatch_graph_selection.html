@@ -3,16 +3,17 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>mplearn.graphical_model._minipatch_graph_selection &mdash; minipatch-learning 0.1 documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <title>mplearn.graphical_model._minipatch_graph_selection &mdash; minipatch-learning 0.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
-  <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/doctools.js"></script>
-        <script src="../../../_static/language_data.js"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -245,15 +246,21 @@
 <span class="sd">        See **Notes** for more details.</span>
 
 <span class="sd">    minipatch_m_ratio : float, default=0.05</span>
-<span class="sd">        The fraction of features/nodes to draw from X to train each base graph selector.</span>
-<span class="sd">        Specifically, `round(minipatch_m_ratio * X.shape[1])` nodes are drawn</span>
-<span class="sd">        into each minipatch. Thus, `minipatch_m_ratio` should be in the</span>
+<span class="sd">        The fraction of features/nodes to draw from X uniformly at random without replacement</span>
+<span class="sd">        to train each base graph selector.</span>
+<span class="sd">        Specifically, `round(minipatch_m_ratio * X.shape[1])` nodes are randomly drawn</span>
+<span class="sd">        into each minipatch. Note that the same node won&#39;t appear twice in</span>
+<span class="sd">        a given minipatch (due to sampling without replacement), but a node can appear</span>
+<span class="sd">        in multiple minipatches. `minipatch_m_ratio` should be in the</span>
 <span class="sd">        interval (0.0, 1.0]. See **Notes** for more details.</span>
 
 <span class="sd">    minipatch_n_ratio : float, default=0.5</span>
-<span class="sd">        The fraction of observations to draw from X to train each base graph selector.</span>
-<span class="sd">        Specifically, `round(minipatch_n_ratio * X.shape[0])` observations are drawn</span>
-<span class="sd">        into each minipatch. Thus, `minipatch_n_ratio` should be in the</span>
+<span class="sd">        The fraction of observations to draw from X uniformly at random without replacement</span>
+<span class="sd">        to train each base graph selector.</span>
+<span class="sd">        Specifically, `round(minipatch_n_ratio * X.shape[0])` observations are randomly drawn</span>
+<span class="sd">        into each minipatch. Note that the same observation won&#39;t appear twice in</span>
+<span class="sd">        a given minipatch (due to sampling without replacement), but an observation can appear</span>
+<span class="sd">        in multiple minipatches. `minipatch_n_ratio` should be in the</span>
 <span class="sd">        interval (0.0, 1.0]. See **Notes** for more details.</span>
 
 <span class="sd">    max_k : int, default=None.</span>
@@ -306,20 +313,20 @@
 <span class="sd">    M_ : int</span>
 <span class="sd">        The number of features/nodes in the input data.</span>
 
-<span class="sd">    Pi_hat_ : ndarray of shape (M*(M-1)/2, )</span>
+<span class="sd">    Pi_hat_ : ndarray of shape (M*(M-1)/2,)</span>
 <span class="sd">        The final edge selection frequency between each pair of nodes (i, j), where :math:`0\leq i &lt; j \leq M-1`.</span>
 <span class="sd">        Specifically, `Pi_hat_[0]` represents the selection frequency of the edge between the node pair (0, 1),</span>
 <span class="sd">        `Pi_hat_[1]` represents the selection frequency of the edge between the node pair (0, 2), so on and so forth.</span>
 <span class="sd">        Each element is in the interval [0.0, 1.0]. A larger value indicates that the corresponding</span>
 <span class="sd">        edge is more stable.</span>
 
-<span class="sd">    S_val_vec_ : ndarray of shape (M*(M-1)/2, )</span>
+<span class="sd">    S_val_vec_ : ndarray of shape (M*(M-1)/2,)</span>
 <span class="sd">        The total number of times each node pair (i, j) is sampled together into minipatches and</span>
 <span class="sd">        there is an estimated edge between them as determined by the base graph selectors.</span>
 <span class="sd">        The indexing of `S_val_vec_` is the same as `Pi_hat_`.</span>
 <span class="sd">        If `low_memory_mode=True`, this would be set to `None`.</span>
 
-<span class="sd">    D_val_vec_ : ndarray of shape (M*(M-1)/2, )</span>
+<span class="sd">    D_val_vec_ : ndarray of shape (M*(M-1)/2,)</span>
 <span class="sd">        The total number of times each node pair (i, j) is sampled together into minipatches.</span>
 <span class="sd">        The indexing of `D_val_vec_` is the same as `Pi_hat_`.</span>
 <span class="sd">        If `low_memory_mode=True`, this would be set to `None`.</span>
@@ -329,8 +336,8 @@
 <span class="sd">    - More details about ``base_graph``: The MPGraph meta-algorithm can be employed with</span>
 <span class="sd">      a wide variety of thresholded Gaussian graphical model selection techniques</span>
 <span class="sd">      as the base selector on minipatches.</span>
-<span class="sd">      This package current provides a highly effective base selector classes -</span>
-<span class="sd">      `minipatch_graphical_model.base_graph.ThresholdedGraphicalLasso`.</span>
+<span class="sd">      This package currently provides a highly effective base selector classes -</span>
+<span class="sd">      `mplearn.graphical_model.base_graph.ThresholdedGraphicalLasso`.</span>
 <span class="sd">      However, user-supplied selector is also allowed as long as the selector class follows the</span>
 <span class="sd">      same structure as the base graph selector mentioned above (i.e. has a ``fit`` method that</span>
 <span class="sd">      provides an estimate of either the precision matrix or its sparsity patterns).</span>
@@ -562,7 +569,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        support : ndarray or coo_matrix</span>
 
-<span class="sd">            - If `support_type=&#39;mask&#39;`, then a boolean array of shape (M*(M-1)/2, ) indicating</span>
+<span class="sd">            - If `support_type=&#39;mask&#39;`, then a boolean array of shape (M*(M-1)/2,) indicating</span>
 <span class="sd">              presence of edges between each pair of nodes (i, j), where :math:`0\leq i &lt; j \leq M-1`.</span>
 <span class="sd">              Specifically, `support[0]=True` iff there is an edge between the node pair (0, 1),</span>
 <span class="sd">              `support[1]=True` iff there is an edge between the node pair (0, 2), so on and so forth.</span>

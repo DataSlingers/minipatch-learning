@@ -73,10 +73,10 @@
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mplearn.graphical_model.base_graph.</span></span><span class="sig-name descname"><span class="pre">ThresholdedGraphicalLasso</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lambda0_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold_seq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ebic_gamma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mplearn/graphical_model/base_graph/_base_graph.html#ThresholdedGraphicalLasso"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mplearn.graphical_model.base_graph.ThresholdedGraphicalLasso" title="Permalink to this definition"></a></dt>
 <dd><p>Gaussian graphical model selection with the Thresholded Graphical Lasso estimator.</p>
 <p>This class is designed to be used as a base graph selector on
-the minipatches with the <code class="docutils literal notranslate"><span class="pre">minipatch_graphical_model.MPGraph</span></code> class.
+the minipatches with the <code class="docutils literal notranslate"><span class="pre">mplearn.graphical_model.MPGraph</span></code> class.
 At a high level, this estimator first gets an initial graph estimate
-using the Graphical Lasso at a small amount a regularization. After that,
-it hard-threshold the initial graph estimate at a sequence of threshold values
+using the Graphical Lasso at a small amount of regularization. After that,
+it hard-thresholds the initial graph estimate at a sequence of threshold values
 and then chooses the thresholded graph with the best EBIC score as the final
 graph estimate. See the original paper [1] for more details.</p>
 <dl class="field-list simple">
