@@ -12,7 +12,7 @@ class ThresholdedOLS(BaseLearner):
     """Feature selection with the Thresholded OLS selector.
 
     This class is designed to be used as a base feature selector on
-    the minipatches with the `minipatch_feature_selection.AdaSTAMPS` class.
+    the minipatches with the `mplearn.feature_selection.AdaSTAMPS` class.
 
     Parameters
     ----------
@@ -31,20 +31,20 @@ class ThresholdedOLS(BaseLearner):
         This is ignored if the minipatch has more observations n
         than features m. For high-dimensional minipatches (n<m),
         `screening_thresh` should be a float in the interval (0.0, 1.0),
-        which will first applying an efficient screening rule to reduce
+        which will first apply an efficient screening rule from [1] to reduce
         the number of features in the minipatch to `round(screening_thresh * n)`.
 
     Attributes
     ----------
-    selection_indicator_ : array of shape (m or `round(screening_thresh * n)`, )
+    selection_indicator_ : ndarray of shape (m,) or (`round(screening_thresh * n)`,)
         A binary selection indicator for the features in the minipatch
         (1 for selected features and 0 for unselected features). If low-dimensional
-        minipatch (n>m), the shape is m. Otherwise, the shape is `round(screening_thresh * n)`.
+        minipatch (n>m), the shape is (m,). Otherwise, the shape is (`round(screening_thresh * n)`,).
 
-    Fk_ : array of shape (m or `round(screening_thresh * n)`, )
-        The corresponding feature indices of the features in `selection_indicator_`.
+    Fk_ : ndarray of shape (m,) or (`round(screening_thresh * n)`,)
+        The corresponding integer indices of the features in `selection_indicator_`.
         Note that these indices correspond to these features' column indices
-        in the full data X_full.
+        in the full data X_full (N observations and M features).
 
     References
     ----------
@@ -73,8 +73,8 @@ class ThresholdedOLS(BaseLearner):
         y : ndarray of shape (n,)
             The target values corresponding to the minipatch.
 
-        Fk : array of shape (m, )
-            The feature indices of the features in the minipatch.
+        Fk : ndarray of shape (m,)
+            The integer indices of the features in the minipatch.
             Note that these indices correspond to these features' column indices
             in the full data X_full. For example, `X = X_full[:, F_k]`.
 
@@ -155,7 +155,7 @@ class DecisionTreeSelector(BaseLearner):
     """Feature selection with the decision tree selector.
 
     This class is designed to be used as a base feature selector on
-    the minipatches with the `minipatch_feature_selection.AdaSTAMPS` class.
+    the minipatches with the `mplearn.feature_selection.AdaSTAMPS` class.
     This is a wrapper built around the DecisionTreeClassifier and the
     DecisionTreeRegressor from the sklearn package.
 
@@ -182,19 +182,19 @@ class DecisionTreeSelector(BaseLearner):
         - If float in the interval (0.0, 1.0], it is the percentage
           of the m features in a minipatch to select.
 
-    random_state : int, default=123
+    random_state : int, default=0
         Controls the randomness of the decision tree model.
 
     Attributes
     ----------
-    selection_indicator_ : array of shape (m, )
+    selection_indicator_ : ndarray of shape (m,)
         A binary selection indicator for the features in the minipatch
         (1 for selected features and 0 for unselected features).
 
-    Fk_ : array of shape (m, )
-        The corresponding feature indices of the features in `selection_indicator_`.
+    Fk_ : ndarray of shape (m,)
+        The corresponding integer indices of the features in `selection_indicator_`.
         Note that these indices correspond to these features' column indices
-        in the full data X_full.
+        in the full data X_full (N observations and M features).
 
     """
 
@@ -204,7 +204,7 @@ class DecisionTreeSelector(BaseLearner):
                  max_depth=5,
                  criterion='gini',
                  num_features_to_select=0.1,
-                 random_state=123):
+                 random_state=0):
 
         self.mode = mode
         self.max_depth = max_depth
@@ -223,8 +223,8 @@ class DecisionTreeSelector(BaseLearner):
         y : ndarray of shape (n,)
             The target values corresponding to the minipatch.
 
-        Fk : array of shape (m, )
-            The feature indices of the features in the minipatch.
+        Fk : ndarray of shape (m,)
+            The integer indices of the features in the minipatch.
             Note that these indices correspond to these features' column indices
             in the full data X_full. For example, `X = X_full[:, F_k]`.
 

@@ -74,10 +74,10 @@ class ThresholdedGraphicalLasso(BaseLearner):
     """Gaussian graphical model selection with the Thresholded Graphical Lasso estimator.
 
     This class is designed to be used as a base graph selector on
-    the minipatches with the `minipatch_graphical_model.MPGraph` class.
+    the minipatches with the `mplearn.graphical_model.MPGraph` class.
     At a high level, this estimator first gets an initial graph estimate
-    using the Graphical Lasso at a small amount a regularization. After that,
-    it hard-threshold the initial graph estimate at a sequence of threshold values
+    using the Graphical Lasso at a small amount of regularization. After that,
+    it hard-thresholds the initial graph estimate at a sequence of threshold values
     and then chooses the thresholded graph with the best EBIC score as the final
     graph estimate. See the original paper [1] for more details.
 

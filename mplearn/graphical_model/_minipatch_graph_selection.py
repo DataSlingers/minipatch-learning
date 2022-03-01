@@ -180,15 +180,21 @@ class MPGraph(BaseLearner):
         See **Notes** for more details.
 
     minipatch_m_ratio : float, default=0.05
-        The fraction of features/nodes to draw from X to train each base graph selector.
-        Specifically, `round(minipatch_m_ratio * X.shape[1])` nodes are drawn
-        into each minipatch. Thus, `minipatch_m_ratio` should be in the
+        The fraction of features/nodes to draw from X uniformly at random without replacement
+        to train each base graph selector.
+        Specifically, `round(minipatch_m_ratio * X.shape[1])` nodes are randomly drawn
+        into each minipatch. Note that the same node won't appear twice in
+        a given minipatch (due to sampling without replacement), but a node can appear
+        in multiple minipatches. `minipatch_m_ratio` should be in the
         interval (0.0, 1.0]. See **Notes** for more details.
 
     minipatch_n_ratio : float, default=0.5
-        The fraction of observations to draw from X to train each base graph selector.
-        Specifically, `round(minipatch_n_ratio * X.shape[0])` observations are drawn
-        into each minipatch. Thus, `minipatch_n_ratio` should be in the
+        The fraction of observations to draw from X uniformly at random without replacement
+        to train each base graph selector.
+        Specifically, `round(minipatch_n_ratio * X.shape[0])` observations are randomly drawn
+        into each minipatch. Note that the same observation won't appear twice in
+        a given minipatch (due to sampling without replacement), but an observation can appear
+        in multiple minipatches. `minipatch_n_ratio` should be in the
         interval (0.0, 1.0]. See **Notes** for more details.
 
     max_k : int, default=None.
@@ -241,20 +247,20 @@ class MPGraph(BaseLearner):
     M_ : int
         The number of features/nodes in the input data.
 
-    Pi_hat_ : ndarray of shape (M*(M-1)/2, )
+    Pi_hat_ : ndarray of shape (M*(M-1)/2,)
         The final edge selection frequency between each pair of nodes (i, j), where :math:`0\leq i < j \leq M-1`.
         Specifically, `Pi_hat_[0]` represents the selection frequency of the edge between the node pair (0, 1),
         `Pi_hat_[1]` represents the selection frequency of the edge between the node pair (0, 2), so on and so forth.
         Each element is in the interval [0.0, 1.0]. A larger value indicates that the corresponding
         edge is more stable.
 
-    S_val_vec_ : ndarray of shape (M*(M-1)/2, )
+    S_val_vec_ : ndarray of shape (M*(M-1)/2,)
         The total number of times each node pair (i, j) is sampled together into minipatches and
         there is an estimated edge between them as determined by the base graph selectors.
         The indexing of `S_val_vec_` is the same as `Pi_hat_`.
         If `low_memory_mode=True`, this would be set to `None`.
 
-    D_val_vec_ : ndarray of shape (M*(M-1)/2, )
+    D_val_vec_ : ndarray of shape (M*(M-1)/2,)
         The total number of times each node pair (i, j) is sampled together into minipatches.
         The indexing of `D_val_vec_` is the same as `Pi_hat_`.
         If `low_memory_mode=True`, this would be set to `None`.
@@ -264,8 +270,8 @@ class MPGraph(BaseLearner):
     - More details about ``base_graph``: The MPGraph meta-algorithm can be employed with
       a wide variety of thresholded Gaussian graphical model selection techniques
       as the base selector on minipatches.
-      This package current provides a highly effective base selector classes -
-      `minipatch_graphical_model.base_graph.ThresholdedGraphicalLasso`.
+      This package currently provides a highly effective base selector classes -
+      `mplearn.graphical_model.base_graph.ThresholdedGraphicalLasso`.
       However, user-supplied selector is also allowed as long as the selector class follows the
       same structure as the base graph selector mentioned above (i.e. has a ``fit`` method that
       provides an estimate of either the precision matrix or its sparsity patterns).
@@ -497,7 +503,7 @@ class MPGraph(BaseLearner):
         -------
         support : ndarray or coo_matrix
 
-            - If `support_type='mask'`, then a boolean array of shape (M*(M-1)/2, ) indicating
+            - If `support_type='mask'`, then a boolean array of shape (M*(M-1)/2,) indicating
               presence of edges between each pair of nodes (i, j), where :math:`0\leq i < j \leq M-1`.
               Specifically, `support[0]=True` iff there is an edge between the node pair (0, 1),
               `support[1]=True` iff there is an edge between the node pair (0, 2), so on and so forth.

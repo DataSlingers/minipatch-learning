@@ -266,21 +266,27 @@ class AdaSTAMPS(BaseLearner):
 
     Parameters
     ----------
-    base_selector : ``Selector`` instance
+    base_selector : ``Estimator`` instance
         A feature selector with a ``fit`` method that provides
         binary selection indicators (1 for selected features and
         0 for unselected features). See **Notes** for more details.
 
     minipatch_m_ratio : float, default=0.05
-        The fraction of features to draw from X to train each base selector.
-        Specifically, `round(minipatch_m_ratio * X.shape[1])` features are drawn
-        into each minipatch. Thus, `minipatch_m_ratio` should be in the
+        The proportion of features to draw from X randomly without replacement
+        to train each base selector.
+        Specifically, `round(minipatch_m_ratio * X.shape[1])` features are randomly
+        drawn into each minipatch. Note that the same feature won't appear twice in
+        a given minipatch (due to sampling without replacement), but a feature can appear
+        in multiple minipatches. `minipatch_m_ratio` should be in the
         interval (0.0, 1.0]. See **Notes** for more details.
 
     minipatch_n_ratio : float, default=0.5
-        The fraction of observations to draw from X to train each base selector.
-        Specifically, `round(minipatch_n_ratio * X.shape[0])` observations are drawn
-        into each minipatch. Thus, `minipatch_n_ratio` should be in the
+        The proportion of observations to draw from X uniformly at random without replacement
+        to train each base selector.
+        Specifically, `round(minipatch_n_ratio * X.shape[0])` observations are randomly
+        drawn into each minipatch. Note that the same observation won't appear twice in
+        a given minipatch (due to sampling without replacement), but an observation can appear
+        in multiple minipatches. `minipatch_n_ratio` should be in the
         interval (0.0, 1.0]. See **Notes** for more details.
 
     sampling_options : dict, default=None
@@ -313,7 +319,7 @@ class AdaSTAMPS(BaseLearner):
             the interval (0.0, 1.0), and should not exceed the value of `'gamma_max'`.
           - `'gamma_max'` : float. The maximum proportion of features in the active set to
             sample into minipatches as the adaptive sampling scheme proceeds. It is recommened
-            to fix its value to 1.0. Note that its value should be in the interval (0.0, 1.0).
+            to fix its value to 1.0. Note that its value should be in the interval (0.0, 1.0].
           - `'gamma_len'` : int. The number of iterations it takes for the adaptive feature
             sampler to go from `'gamma_min'` to `'gamma_max'`. This controls the trade-off
             between exploiting the active set and exploring the remaining input feature space.
@@ -324,11 +330,11 @@ class AdaSTAMPS(BaseLearner):
           features into minipatches. In this case, `sampling_options` is required to have
           the following parameters as additional keys:
 
-          - `'E'` : Int. This is the same as the `'E'` parameter in the case of `'mode'` being 'ee'.
+          - `'E'` : int. This is the same as the `'E'` parameter in the case of `'mode'` being 'ee'.
             See the descriptions above for details.
 
-        - If `'mode'` has value 'uniform', it samples features uniformly at random into minipatches.
-          In this case, `sampling_options` does not need to have other key-value pairs.
+        - If `'mode'` has value 'uniform', it samples features uniformly at random without replacement
+          into minipatches. In this case, `sampling_options` does not need to have other key-value pairs.
 
     stopping_criteria_options : dict, default=None
         Dictionary with parameter names (`str`) as keys and specific parameter
@@ -383,17 +389,17 @@ class AdaSTAMPS(BaseLearner):
     last_k_ : int
         The total number of iterations for which the meta-algorithm has run.
 
-    Pi_hat_last_k_ : array of shape (n_features, )
+    Pi_hat_last_k_ : ndarray of shape (n_features,)
         The final selection frequency for each of the input features. Each element is in the interval [0.0, 1.0].
         A larger value indicates that the corresponding feature is more informative, vice versa.
 
-    full_Pi_hat_seq_ : array of shape (n_features, `last_k_`) or (n_features, `max_iters_to_keep`)
-        If `keep_all_iters` is `True`, then this is an array of shape (n_features, `last_k_`) containing
+    full_Pi_hat_seq_ : ndarray of shape (n_features, `last_k_`) or (n_features, `max_iters_to_keep`)
+        If `keep_all_iters` is `True`, then this is a ndarray of shape (n_features, `last_k_`) containing
         the selection frequency of all input features from first iteration to the last. If `keep_all_iters`
-        is `False`, then this is an array of shape (n_features, `max_iters_to_keep`) containing the
+        is `False`, then this is a ndarray of shape (n_features, `max_iters_to_keep`) containing the
         selection frequency of all input features for the last `max_iters_to_keep` iterations.
 
-    full_Pi_hat_k_seq_ : array of shape (`last_k_`, ) or (`max_iters_to_keep`, )
+    full_Pi_hat_k_seq_ : ndarray of shape (`last_k_`,) or (`max_iters_to_keep`,)
         This contains the iteration numbers corresponding to the columns of `full_Pi_hat_seq_`.
 
     burn_in_length_ : int
@@ -404,14 +410,14 @@ class AdaSTAMPS(BaseLearner):
     -----
     - More details about `base_selector`: The AdaSTAMPS meta-algorithm can be employed with
       a wide variety of feature selection techniques as the base selector on minipatches.
-      This package current provides two highly efficient base selector classes -
-      `minipatch_feature_selection.base_selector.ThresholdedOLS` for regression
-      problems and `minipatch_feature_selection.base_selector.DecisionTreeSelector` for
+      This package currently provides two highly efficient base selector classes -
+      `mplearn.feature_selection.base_selector.ThresholdedOLS` for regression
+      problems and `mplearn.feature_selection.base_selector.DecisionTreeSelector` for
       both regression and classification problems. However, user-supplied selector is
       also allowed as long as the selector class follows the same structure as the two
       base selectors mentioned above (i.e. has a ``fit`` method that accepts minipatch
       feature indices and provides binary selection indicators (1 for selected features and
-      0 for unselected features).
+      0 for unselected features)).
     - More details about choice of minipatch size: Suppose the data X has N observations (rows)
       and M features (columns). Following the notations of [1], a minipatch is obtained by
       subsampling n observations and m features simultaneously without replacement from X
@@ -497,7 +503,8 @@ class AdaSTAMPS(BaseLearner):
         X : ndarray of shape (n_samples, n_features)
             The training input samples. Note that data frame or sparse matrix format
             are not allowed. Also, the dtype of X has to be numeric (e.g. float, int).
-            The algorithm expects that all appropriate preprocessing steps on X have been completed.
+            The algorithm expects that all appropriate preprocessing steps on X have been completed
+            prior to calling `fit`.
 
         y : ndarray of shape (n_samples,)
             The target values. Note that for classification problems (categorical y),
@@ -511,7 +518,7 @@ class AdaSTAMPS(BaseLearner):
 
         Notes
         -----
-        Allows NaN/Inf in the input if the underlying estimator does as well.
+        Allows NaN/Inf in the input if the underlying base selector does as well.
         """
 
         # Specify minipatch size
@@ -772,7 +779,7 @@ class AdaSTAMPS(BaseLearner):
 
         Returns
         -------
-        support : array
+        support : ndarray
             If `indices` is `False`, this is a boolean array of shape
             [# input features], in which an element is True iff its
             corresponding feature is selected by the algorithm. If `indices` is
@@ -797,7 +804,7 @@ class AdaSTAMPS(BaseLearner):
         return support_ if not indices else np.where(support_)[0]
 
     def visualize_selection_frequency(self, max_features_to_plot=None):
-        """ Visualize the selection frequency of features
+        """ Visualize the selection frequency of the input features.
 
         It is generally useful to visualize the selection frequency
         of the input features versus number of iterations for better
@@ -807,7 +814,7 @@ class AdaSTAMPS(BaseLearner):
         ----------
         max_features_to_plot : int, default=None
             Controls the maximum number of features whose selection frequency
-            over iterations are visualized. By default ('None`),
+            over iterations are visualized. By default (`None`),
             all input features are shown. However, such visualization
             might consume too much memory if the number of input feature
             is too large (e.g. 5000). In such cases, consider setting
